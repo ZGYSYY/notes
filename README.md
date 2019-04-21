@@ -29,7 +29,8 @@
 - Spring Boot 中文索引：http://springboot.fun/
 
 # 前端
-入门Webpack，看这篇就够了：https://www.jianshu.com/p/42e11515c10f
+- 入门Webpack，看这篇就够了：https://www.jianshu.com/p/42e11515c10f
+- NPM install -save 和 -save-dev 傻傻分不清：https://www.limitcode.com/detail/59a15b1a69e95702e0780249.html
 
 # 待看
 - RocketMQ 实战之快速入门：https://www.jianshu.com/p/824066d70da8
