@@ -1,5 +1,6 @@
 # Java
 - SpringBoot实现Java高并发秒杀系统之DAO层开发（一）：https://tycoding.cn/2018/10/12/seckill-dao/
+- Spring Security中文文档：https://springcloud.cc/spring-security.html
 
 # MySQL
 - mysql共享锁与排他锁：https://www.cnblogs.com/boblogsbo/p/5602122.html
