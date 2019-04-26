@@ -32,6 +32,9 @@
 # 前端
 - 入门Webpack，看这篇就够了：https://www.jianshu.com/p/42e11515c10f
 - NPM install -save 和 -save-dev 傻傻分不清：https://www.limitcode.com/detail/59a15b1a69e95702e0780249.html
+- 从零开始搭建一个简单的基于webpack的vue开发环境：https://segmentfault.com/a/1190000012789253
+- webpack学习笔记--配置resolve：https://www.cnblogs.com/joyco773/p/9049760.html
+- module.exports与exports，export与export default之间的关系和区别：https://www.cnblogs.com/fayin/p/6831071.html
 
 # 待看
 - RocketMQ 实战之快速入门：https://www.jianshu.com/p/824066d70da8
