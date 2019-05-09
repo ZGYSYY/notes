@@ -1,6 +1,7 @@
 # Java
 - SpringBoot实现Java高并发秒杀系统之DAO层开发（一）：https://tycoding.cn/2018/10/12/seckill-dao/
 - Spring Security中文文档：https://springcloud.cc/spring-security.html
+- Java Bean Copy框架性能对比：https://yq.aliyun.com/articles/392185
 
 # JavaWeb
 - 浅析web端的消息推送原理：https://my.oschina.net/u/3920392/blog/3025561
