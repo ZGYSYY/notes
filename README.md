@@ -2,6 +2,7 @@
 - SpringBoot实现Java高并发秒杀系统之DAO层开发（一）：https://tycoding.cn/2018/10/12/seckill-dao/
 - Spring Security中文文档：https://springcloud.cc/spring-security.html
 - Java Bean Copy框架性能对比：https://yq.aliyun.com/articles/392185
+- 打开orika的正确方式：https://www.cnkirito.moe/orika/
 
 # JavaWeb
 - 浅析web端的消息推送原理：https://my.oschina.net/u/3920392/blog/3025561
@@ -10,7 +11,6 @@
 - mysql共享锁与排他锁：https://www.cnblogs.com/boblogsbo/p/5602122.html
 - 互联网MySQL开发规范：https://www.cnblogs.com/zzsdream/p/6652923.html
 - MySQL常用函数：https://www.cnblogs.com/kissdodog/p/4168721.html
-- 打开orika的正确方式：https://www.cnkirito.moe/orika/
 
 # 其他
 - 阿里中间件团队博客：http://jm.taobao.org/
