@@ -24,7 +24,7 @@
 - 推荐几个牛逼的 IDEA 插件，还带动图！：https://www.jianshu.com/p/30a018bc98d0
 - Java 程序员必备的 Intellij IDEA 插件：https://www.jianshu.com/p/5f3ac6adffb8
 - IntelliJ IDEA 从入门到上瘾教程，2019图文版！：https://www.jianshu.com/p/80f3c606a52d
-- IDEA的这八条配置你一定要改！：IDEA的这八条配置你一定要改！
+- IDEA的这八条配置你一定要改！：https://www.jianshu.com/p/7af6f461c294
 
 # Linux
 - linux后台执行命令：&和nohup：https://www.cnblogs.com/zzyoucan/p/7764590.html
