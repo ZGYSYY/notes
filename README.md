@@ -4,6 +4,7 @@
 - Java Bean Copy框架性能对比：https://yq.aliyun.com/articles/392185
 - 打开orika的正确方式：https://www.cnkirito.moe/orika/
 - CGLIB介绍与原理：https://blog.csdn.net/zghwaicsdn/article/details/50957474
+- hiro入门这篇就够了【Shiro的基础知识、回顾URL拦截】：https://segmentfault.com/a/1190000013875092
 
 # JavaWeb
 - 浅析web端的消息推送原理：https://my.oschina.net/u/3920392/blog/3025561
