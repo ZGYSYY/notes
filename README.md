@@ -4,7 +4,7 @@
 - Java Bean Copy框架性能对比：https://yq.aliyun.com/articles/392185
 - 打开orika的正确方式：https://www.cnkirito.moe/orika/
 - CGLIB介绍与原理：https://blog.csdn.net/zghwaicsdn/article/details/50957474
-- hiro入门这篇就够了【Shiro的基础知识、回顾URL拦截】：https://segmentfault.com/a/1190000013875092
+- Shiro入门这篇就够了【Shiro的基础知识、回顾URL拦截】：https://segmentfault.com/a/1190000013875092
 
 # JavaWeb
 - 浅析web端的消息推送原理：https://my.oschina.net/u/3920392/blog/3025561
@@ -26,6 +26,7 @@
 - Java 程序员必备的 Intellij IDEA 插件：https://www.jianshu.com/p/5f3ac6adffb8
 - IntelliJ IDEA 从入门到上瘾教程，2019图文版！：https://www.jianshu.com/p/80f3c606a52d
 - IDEA的这八条配置你一定要改！：https://www.jianshu.com/p/7af6f461c294
+- Intellij IDEA 2017 debug断点调试技巧与总结详解篇：https://blog.csdn.net/xingxiupaioxue/article/details/77527709
 
 # Linux
 - linux后台执行命令：&和nohup：https://www.cnblogs.com/zzyoucan/p/7764590.html
