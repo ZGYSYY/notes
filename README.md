@@ -9,6 +9,7 @@
 - java并发之线程执行器（Executor）：https://www.cnblogs.com/uodut/p/6808612.html
 - 如何优雅的使用和理解线程池：https://mp.weixin.qq.com/s/uxM2vMJghOOySbLa5BKoPA
 - 线程池是怎样工作的：https://mp.weixin.qq.com/s/NbiKYqtnIkGCK3pMwLaTww
+- 定时任务:Java中Timer和TimerTask的使用：https://batitan.iteye.com/blog/253483
 
 # JavaWeb
 - 浅析web端的消息推送原理：https://my.oschina.net/u/3920392/blog/3025561
