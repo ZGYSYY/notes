@@ -60,3 +60,4 @@
 # 待看
 - RocketMQ 实战之快速入门：https://www.jianshu.com/p/824066d70da8
 - 主流Java数据库连接池比较及前瞻：http://blog.didispace.com/java-datasource-pool-compare/
+- Spring Boot+Vue从零开始搭建系统（一）：项目前端_Vuejs环境搭建：https://segmentfault.com/a/1190000013950461
