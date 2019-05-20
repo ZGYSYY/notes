@@ -57,6 +57,7 @@
 - vuex最简单、最详细的入门文档：https://segmentfault.com/a/1190000009404727
 - localStorage使用总结：https://www.cnblogs.com/st-leslie/p/5617130.html
 - vue开发看这篇文章就够了：https://segmentfault.com/a/1190000012692321
+- js动态创建Form表单并提交：https://www.cnblogs.com/haoqipeng/p/create-form-with-js.html
 
 # 待看
 - RocketMQ 实战之快速入门：https://www.jianshu.com/p/824066d70da8
