@@ -20,6 +20,7 @@
 - mysql共享锁与排他锁：https://www.cnblogs.com/boblogsbo/p/5602122.html
 - 互联网MySQL开发规范：https://www.cnblogs.com/zzsdream/p/6652923.html
 - MySQL常用函数：https://www.cnblogs.com/kissdodog/p/4168721.html
+- MyBatis之三：多表联合查询：http://www.cnblogs.com/wucj/p/5148813.html
 
 # 其他
 - 阿里中间件团队博客：http://jm.taobao.org/
