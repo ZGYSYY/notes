@@ -12,6 +12,7 @@
 - 定时任务:Java中Timer和TimerTask的使用：https://batitan.iteye.com/blog/253483
 - Java并发编程-ThreadFactory接口：https://blog.csdn.net/chenchaofuck1/article/details/51589774
 - 设计模式（二）单例模式的七种写法：https://blog.csdn.net/itachi85/article/details/50510124
+- spring AspectJ的Execution表达式：https://www.cnblogs.com/powerwu/articles/5177662.html
 
 # JavaWeb
 - 浅析web端的消息推送原理：https://my.oschina.net/u/3920392/blog/3025561
