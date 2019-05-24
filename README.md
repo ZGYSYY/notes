@@ -13,8 +13,6 @@
 - Java并发编程-ThreadFactory接口：https://blog.csdn.net/chenchaofuck1/article/details/51589774
 - 设计模式（二）单例模式的七种写法：https://blog.csdn.net/itachi85/article/details/50510124
 - spring AspectJ的Execution表达式：https://www.cnblogs.com/powerwu/articles/5177662.html
-
-# JavaWeb
 - 浅析web端的消息推送原理：https://my.oschina.net/u/3920392/blog/3025561
 
 # MySQL
@@ -22,20 +20,6 @@
 - 互联网MySQL开发规范：https://www.cnblogs.com/zzsdream/p/6652923.html
 - MySQL常用函数：https://www.cnblogs.com/kissdodog/p/4168721.html
 - MyBatis之三：多表联合查询：http://www.cnblogs.com/wucj/p/5148813.html
-
-# 其他
-- 阿里中间件团队博客：http://jm.taobao.org/
-- Spring Boot 整合 RocketMq：https://www.jianshu.com/p/8c4c2c2ab62e
-- windows下RocketMQ安装部署：https://www.jianshu.com/p/4a275e779afa
-- 自己手写一个SpringMVC框架(简化)：https://my.oschina.net/liughDevelop/blog/1622646
-- 十分钟入门RocketMQ：http://jm.taobao.org/2017/01/12/rocketmq-quick-start-in-10-minutes/
-- 消息队列之 RocketMQ：https://juejin.im/post/5af02571f265da0b9e64fcfd
-- NPM install -save 和 -save-dev 傻傻分不清：https://www.limitcode.com/detail/59a15b1a69e95702e0780249.html
-- 推荐几个牛逼的 IDEA 插件，还带动图！：https://www.jianshu.com/p/30a018bc98d0
-- Java 程序员必备的 Intellij IDEA 插件：https://www.jianshu.com/p/5f3ac6adffb8
-- IntelliJ IDEA 从入门到上瘾教程，2019图文版！：https://www.jianshu.com/p/80f3c606a52d
-- IDEA的这八条配置你一定要改！：https://www.jianshu.com/p/7af6f461c294
-- Intellij IDEA 2017 debug断点调试技巧与总结详解篇：https://blog.csdn.net/xingxiupaioxue/article/details/77527709
 
 # Linux
 - linux后台执行命令：&和nohup：https://www.cnblogs.com/zzyoucan/p/7764590.html
@@ -62,6 +46,21 @@
 - js动态创建Form表单并提交：https://www.cnblogs.com/haoqipeng/p/create-form-with-js.html
 - webpack 中文文档(v4.15.1)：http://webpack.html.cn/
 - Webpack——令人困惑的地方：https://segmentfault.com/a/1190000005089993
+- Node中没搞明白require和import，你会被坑的很惨：https://imweb.io/topic/582293894067ce9726778be9
+
+# 其他
+- 阿里中间件团队博客：http://jm.taobao.org/
+- Spring Boot 整合 RocketMq：https://www.jianshu.com/p/8c4c2c2ab62e
+- windows下RocketMQ安装部署：https://www.jianshu.com/p/4a275e779afa
+- 自己手写一个SpringMVC框架(简化)：https://my.oschina.net/liughDevelop/blog/1622646
+- 十分钟入门RocketMQ：http://jm.taobao.org/2017/01/12/rocketmq-quick-start-in-10-minutes/
+- 消息队列之 RocketMQ：https://juejin.im/post/5af02571f265da0b9e64fcfd
+- NPM install -save 和 -save-dev 傻傻分不清：https://www.limitcode.com/detail/59a15b1a69e95702e0780249.html
+- 推荐几个牛逼的 IDEA 插件，还带动图！：https://www.jianshu.com/p/30a018bc98d0
+- Java 程序员必备的 Intellij IDEA 插件：https://www.jianshu.com/p/5f3ac6adffb8
+- IntelliJ IDEA 从入门到上瘾教程，2019图文版！：https://www.jianshu.com/p/80f3c606a52d
+- IDEA的这八条配置你一定要改！：https://www.jianshu.com/p/7af6f461c294
+- Intellij IDEA 2017 debug断点调试技巧与总结详解篇：https://blog.csdn.net/xingxiupaioxue/article/details/77527709
 
 # 待看
 - RocketMQ 实战之快速入门：https://www.jianshu.com/p/824066d70da8
