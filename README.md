@@ -48,6 +48,7 @@
 - Webpack——令人困惑的地方：https://segmentfault.com/a/1190000005089993
 - Node中没搞明白require和import，你会被坑的很惨：https://imweb.io/topic/582293894067ce9726778be9
 - vue学习十五(props解耦、props 布尔-对象-函数三种模式)：https://blog.csdn.net/u013210620/article/details/82964157
+- 前端路由的两种模式： hash 模式和 history 模式：https://www.cnblogs.com/JRliu/p/9025290.html
 
 # 其他
 - 阿里中间件团队博客：http://jm.taobao.org/
