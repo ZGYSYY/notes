@@ -20,6 +20,7 @@
 - 互联网MySQL开发规范：https://www.cnblogs.com/zzsdream/p/6652923.html
 - MySQL常用函数：https://www.cnblogs.com/kissdodog/p/4168721.html
 - MyBatis之三：多表联合查询：http://www.cnblogs.com/wucj/p/5148813.html
+-  MySQL 四种事务隔离级的说明：https://www.cnblogs.com/zhoujinyi/p/3437475.html
 
 # Linux
 - linux后台执行命令：&和nohup：https://www.cnblogs.com/zzyoucan/p/7764590.html
