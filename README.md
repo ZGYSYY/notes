@@ -34,6 +34,7 @@
 - Java技术驿站：http://cmsblogs.com/
 - Hollis：https://www.hollischuang.com/
 - Spring Boot 中文索引：http://springboot.fun/
+- 田小波的技术博客：https://www.tianxiaobo.com/
 
 # 前端
 - 入门Webpack，看这篇就够了：https://www.jianshu.com/p/42e11515c10f
