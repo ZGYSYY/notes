@@ -14,6 +14,7 @@
 - 设计模式（二）单例模式的七种写法：https://blog.csdn.net/itachi85/article/details/50510124
 - spring AspectJ的Execution表达式：https://www.cnblogs.com/powerwu/articles/5177662.html
 - 浅析web端的消息推送原理：https://my.oschina.net/u/3920392/blog/3025561
+- Java常量池理解与总结：https://www.jianshu.com/p/c7f47de2ee80
 
 # MySQL
 - mysql共享锁与排他锁：https://www.cnblogs.com/boblogsbo/p/5602122.html
