@@ -15,6 +15,7 @@
 - spring AspectJ的Execution表达式：https://www.cnblogs.com/powerwu/articles/5177662.html
 - 浅析web端的消息推送原理：https://my.oschina.net/u/3920392/blog/3025561
 - Java常量池理解与总结：https://www.jianshu.com/p/c7f47de2ee80
+- 在 Spring Boot 项目中使用 Swagger 文档：https://www.ibm.com/developerworks/cn/java/j-using-swagger-in-a-spring-boot-project/index.html
 
 # MySQL
 - mysql共享锁与排他锁：https://www.cnblogs.com/boblogsbo/p/5602122.html
