@@ -16,6 +16,7 @@
 - 浅析web端的消息推送原理：https://my.oschina.net/u/3920392/blog/3025561
 - Java常量池理解与总结：https://www.jianshu.com/p/c7f47de2ee80
 - 在 Spring Boot 项目中使用 Swagger 文档：https://www.ibm.com/developerworks/cn/java/j-using-swagger-in-a-spring-boot-project/index.html
+- 深入理解Java类加载器(ClassLoader)：https://blog.csdn.net/javazejian/article/details/73413292
 
 # MySQL
 - mysql共享锁与排他锁：https://www.cnblogs.com/boblogsbo/p/5602122.html
