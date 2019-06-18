@@ -74,6 +74,7 @@
 - IDEA的这八条配置你一定要改！：https://www.jianshu.com/p/7af6f461c294
 - Intellij IDEA 2017 debug断点调试技巧与总结详解篇：https://blog.csdn.net/xingxiupaioxue/article/details/77527709
 - Spring Boot+Vue从零开始搭建系统（一）：项目前端_Vuejs环境搭建：https://segmentfault.com/a/1190000013950461
+- git仓库迁移：https://www.jianshu.com/p/712ed12d599c
 
 # 待看
 - RocketMQ 实战之快速入门：https://www.jianshu.com/p/824066d70da8
