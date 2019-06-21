@@ -21,6 +21,7 @@
 - Java String 综述(上篇)：https://blog.csdn.net/justloveyou_/article/details/52556427
 - Java String 综述(下篇)：https://blog.csdn.net/justloveyou_/article/details/60983034
 - JVM 内存模型概述：https://blog.csdn.net/justloveyou_/article/details/71189093#commentsedit
+- Jedis常用方法API：https://blog.csdn.net/zhangguanghui002/article/details/78770071
 
 # MySQL
 - mysql共享锁与排他锁：https://www.cnblogs.com/boblogsbo/p/5602122.html
