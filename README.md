@@ -32,6 +32,7 @@
 
 # Linux
 - linux后台执行命令：&和nohup：https://www.cnblogs.com/zzyoucan/p/7764590.html
+- Linux手册 http://man.linuxde.net/
 
 # 大牛博客
 - TyCoding's blog：https://www.tycoding.cn/
