@@ -79,6 +79,7 @@
 - Spring Boot+Vue从零开始搭建系统（一）：项目前端_Vuejs环境搭建：https://segmentfault.com/a/1190000013950461
 - git仓库迁移：https://www.jianshu.com/p/712ed12d599c
 - 壁纸网站：http://simpledesktops.com/
+- Git中文显示问题解决：http://xstarcd.github.io/wiki/shell/git_chinese.html
 
 # 待看
 - RocketMQ 实战之快速入门：https://www.jianshu.com/p/824066d70da8
