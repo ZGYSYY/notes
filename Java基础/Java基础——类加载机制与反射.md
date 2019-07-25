@@ -74,6 +74,10 @@ JVM初始化一个类包含如下几个步骤。
 - Extension ClassLoader：扩展类加载器，该类加载器是ExtClassLoader的实例。
 - System ClassLoader：系统类加载器，该类加载器是。
 
+### 类加载器加载Class过程
+
+![类加载器加载Class过程](Java基础——类加载机制与反射.assets/1564061830656.png)
+
 ### 类加载机制
 JVM的类加载机制主要有如下3种。
 1. 全局负责，当一个类加载器负责加载某个Class时，该Class所依赖和引用的其他Class也将由该类加载器负责载入，除非显示使用另外一个类加载器来载入。
