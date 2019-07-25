@@ -4,21 +4,21 @@
 
 - 基于字节操作的IO接口：InputStream 和 OutputStream。
 
-  ![InputStream的类层次结构](C:/Users/ZGY/AppData/Roaming/Typora/typora-user-images/1563601055028.png)
+  ![InputStream的类层次结构](深入分析JavaIO的工作机制.assets/1563601055028.png)
 
   
 
-  ![OutputStream的类层次结构](C:/Users/ZGY/AppData/Roaming/Typora/typora-user-images/1563601826581.png)
+  ![OutputStream的类层次结构](深入分析JavaIO的工作机制.assets/1563601826581.png)
 
   
 
 - 基于字符操作的IO接口：Writer 和 Reader。
 
-  ![Writer类层次结构](C:/Users/ZGY/AppData/Roaming/Typora/typora-user-images/1563602353863.png)
+  ![Writer类层次结构](深入分析JavaIO的工作机制.assets/1563602353863.png)
 
   
 
-  ![Reader类层次结构](C:/Users/ZGY/AppData/Roaming/Typora/typora-user-images/1563602661283.png)
+  ![Reader类层次结构](深入分析JavaIO的工作机制.assets/1563602661283.png)
 
 - 基于磁盘操作的IO接口：File。
 
