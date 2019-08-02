@@ -29,7 +29,9 @@
 - 互联网MySQL开发规范：https://www.cnblogs.com/zzsdream/p/6652923.html
 - MySQL常用函数：https://www.cnblogs.com/kissdodog/p/4168721.html
 - MyBatis之三：多表联合查询：http://www.cnblogs.com/wucj/p/5148813.html
--  MySQL 四种事务隔离级的说明：https://www.cnblogs.com/zhoujinyi/p/3437475.html
+- MySQL 四种事务隔离级的说明：https://www.cnblogs.com/zhoujinyi/p/3437475.html
+- Mysql高性能优化规范建议：https://www.cnblogs.com/huchong/p/10219318.html
+- MySQL中EXPLAIN执行计划分析：https://www.cnblogs.com/huchong/p/10235260.html
 
 # Linux
 - linux后台执行命令：&和nohup：https://www.cnblogs.com/zzyoucan/p/7764590.html
@@ -82,5 +84,3 @@
 - Git中文显示问题解决：http://xstarcd.github.io/wiki/shell/git_chinese.html
 
 # 待看
-- RocketMQ 实战之快速入门：https://www.jianshu.com/p/824066d70da8
-- 主流Java数据库连接池比较及前瞻：http://blog.didispace.com/java-datasource-pool-compare/
