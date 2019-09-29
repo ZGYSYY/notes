@@ -1,0 +1,316 @@
+<center><h1>SpringBoot+Dubbo+Zookeeper实战笔记</h1></center>
+# 技术栈区别
+
+Spring Boot + Spring Cloud：组件多，功能完备。
+
+Spring Boot + Dubbo + Zookeeper：组件少，功能不太完备。
+
+# 什么是高可用
+
+- 一直可以使用
+- 能支持高并发
+- 具有高性能
+
+# 四大问题
+
+1. 客户端如何访问这么多的服务
+
+   API 网关
+
+2. 服务与服务之间如何通信
+
+   - 同步通信
+
+     HTTP（Apache Http Client）
+
+     RPC（Dubbo（只支持Java）、Apache Thrift、gRPC）
+
+   - 异步通信
+
+     消息队列（Kafka，RabbitMQ、RocketMQ）
+
+3. 这么多服务，如何管理
+
+   - 服务治理
+     - 服务注册与发现
+       - 基于客户端的服务注册与发现，Zookeeper
+       - 基于服务端的服务注册与发现，Eureka
+
+4. 服务挂了或者网络不可靠怎么办
+
+   - 重试机制
+   - 服务熔断
+   - 服务降级
+   - 服务限流
+
+PS：其实最大问题就是网络不可靠。
+
+# 什么是Zookeeper
+
+Zookeeper是一种**分布式协调服务**，用于管理大型主机。在分布式环境中协调和管理服务是一个复杂的过程。Zookeeper通过其简单的架构和API解决了这个问题。Zookeeper允许开发人员专注于核心应用程序逻辑，而不必担心应用程序的分布式特性。
+
+# 分布式锁应具备条件
+
+- 在分布式系统环境下，一个方法在同一个时间内只能被一个机器的一个线程调用。
+- 高可用的获取锁和释放锁。
+- 高性能的获取锁和释放锁。
+- 具备可重入特性
+- 具备锁失效机制，防止出现死锁
+- 具备非阻塞特性，即没有获取到锁立即返回获取锁失败。
+
+# 分布式锁实现
+
+- Zookeeper
+- Memcache
+- Redis
+- Chubby
+
+## 通过Redis来实现分布式锁
+
+当有多个服务同时向Redis获取锁的时候，会遵循下面的步骤
+
+1. 加锁：使用命令`setnx`往Redis中存放一个数据（标志位），该命令会有一个返回值，如果返回值大于0，表示加锁成功，如果返回值等于0，表示加锁失败。
+2. 释放锁：使用`del`命令删除对应的数据。
+3. 锁超时：为了防止某些特殊情况下，锁没有得到释放，因此需要实现一个在规定时间内，如果锁没有被释放，将自动调用`del`命令来释放锁。
+
+# Zookeeper两大功能
+
+1. 分布式锁。
+2. 服务注册与发现。
+
+# Zookeeper的数据模型
+
+Zookeeper的数据模型像数据结构中的树，也很像linux中的文件系统目录。
+
+![1568860598517](SpringBoot+Dubbo+Zookeeper实战笔记.assets/1568860598517.png)
+
+上图中，**一个正方形代表一个节点（Znode）**。在Zookeeper中访问节点数据是通过路径来访问的，比如`/user/list`表示的是获取user下list节点数据。
+
+Znede中包含的元素如下
+
+- data：Znode存储的数据信息。
+- ACL：记录Znode的访问权限，即哪些人或哪些IP可以访问本节点。
+- stat：包含Znode的各种元数据，比如事务ID、版本号、时间戳、大小等。
+- child：当前节点的子节点引用。
+
+需要注意一点，Zookeeper是为读多写少的场景所设计。Znode并不是用来存储大规模业务数据的地方，而是用于存储少量的状态和配置信息的地方，所以规定**每个节点的数据大小不能超过1MB**。
+
+# Zookeeper的基本操作
+
+- 创建节点：create
+- 删除节点：delete
+- 判断节点是否存在：exists
+- 获得一个节点的数据：getData
+- 设置一个节点的数据：setData
+- 获取节点下的所有子节点：getChildren
+
+在上面的这些操作中，`getData`、`exists`、`getChildren`属于读操作，Zookeeper客户端在进行读操作的时候，可以选择是否设置`watch`选项，通过Zookeeper的**事件通知机制**，在服务端中，当被Zookeeper客户端watch的节点被修改（删除、修改）时，Zookeeper服务端会异步通知Zookeeper客户端当前数据被修改了。
+
+# Zookeeper的事件通知机制
+
+当用户访问某个服务的时候，会在Gateway（网关）中根据请求路径（如：user/info）来确定用户需要访问哪个服务，并确定该服务所对应的服务器IP地址，如果在网关中没有找到所访问路径的服务器IP地址，在Gateway中就会向Zookeeper服务器中发送getData(路径,whach)命令，在Zookeeper服务器获取对应路径的IP地址，并将查询的IP地址在Gateway（网关）中保存一份，这样就可以在下次请求该路径时，就不会再访问Zookeeper服务器。因为Gateway在向向Zookeeper服务器中发送getData命令的时候添加了`whach`选项，当我们的某个服务器宕机的时候，Zookeeper服务器就会异步通知Gateway，告诉Gateway哪台机器宕机了，这时Gateway就会在自己内部保存的IP地址中将那台宕机的IP地址删除掉。
+
+# Zookeeper集群
+
+Zookeeper集群是为了防止Zookeeper服务器宕机，导致所有服务不可用。
+
+Zookeeper集群是一个一主多从结构。在更新数据时，首先会更新主节点（这里的节点指的是服务器，不是Znode），然后再从主节点将数据复制到从节点。在读取数据的时候，直接读取任意节点。
+
+为了保证主从节点的数据一致性问题，Zookeeper采用了ZAB协议来保证数据的一致性。
+
+[参考：ZAB协议详解](https://dbaplus.cn/news-141-1875-1.html)
+
+# Docker中安装Zookeeper集群
+
+在`/usr/local/`创建`docker`目录和`Zookeeper`目录
+
+```bash
+cd /usr/local
+mkdir docker
+cd docker
+mkdir zookeeper
+```
+
+创建docker-compose.yml文件，内容如下
+
+```bash
+version: '3.1'
+
+services:
+  zoo1:
+    image: zookeeper
+    restart: always
+    hostname: zoo1
+    ports:
+      - 2181:2181
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_SERVERS: server.1=0.0.0.0:2888:3888;2181 server.2=zoo2:2888:3888;2181 server.3=zoo3:2888:3888;2181
+
+  zoo2:
+    image: zookeeper
+    restart: always
+    hostname: zoo2
+    ports:
+      - 2182:2181
+    environment:
+      ZOO_MY_ID: 2
+      ZOO_SERVERS: server.1=zoo1:2888:3888;2181 server.2=0.0.0.0:2888:3888;2181 server.3=zoo3:2888:3888;2181
+
+  zoo3:
+    image: zookeeper
+    restart: always
+    hostname: zoo3
+    ports:
+      - 2183:2181
+    environment:
+      ZOO_MY_ID: 3
+      ZOO_SERVERS: server.1=zoo1:2888:3888;2181 server.2=zoo2:2888:3888;2181 server.3=0.0.0.0:2888:3888;2181
+```
+
+使用docker-compose创建容器并启动
+
+```bash
+docker-compose up -d
+```
+
+查看Zookeeper配置文件
+
+```bash
+# 进入容器内部
+docker exec -it zookeeper_zoo1_1 /bin/bash
+# 查看配置文件
+cat /conf/zoo.cfg
+```
+
+配置文件内容如下：
+
+```bash
+# Zookeeper数据文件目录
+dataDir=/data
+# Zookeeper日志文件目录
+dataLogDir=/datalog
+# 这个时间是作为Zookeeper服务器与服务器或客户端与服务器之间维持心跳的间隔，也就是每隔tickTime时间就会发送一个心跳，单位为毫秒。
+tickTime=2000
+# 配置Zookeeper的主节点在初始化连接时最长能忍受从节点服务器多少个心跳时间间隔数，时间为initLimit*tickTime，单位为毫秒。
+initLimit=5
+# 配置Leader与Follower之间发送消息，请求和应答时间长度，最长不能超过syncLimit*tickTime的时间长度，，单位为毫秒。
+syncLimit=2
+autopurge.snapRetainCount=3
+autopurge.purgeInterval=0
+# 限制连接到Zookeeper的客户端数量，限制并发连接的数量，它通过IP来区分不同的客户端。此配置选项可以用来阻止某些类别的DOS攻击。将它设置为0或忽略而不进行设置将会取消对并发连接的限制。
+maxClientCnxns=60
+standaloneEnabled=true
+admin.enableServer=true
+# Server.A=B:C:D;E详解
+# A：一个数字，表示第几号服务器。
+# B：集群中当前服务器的IP地址，也可以是计算机名称。
+# C：表示这个服务器与集群中loader服务器交换信息的端口。
+# D：表示万一集群中loader服务器宕机了，需要一个端口来进行重新loader选举，而这个端口就是用来执行选举时，服务器相互通信的端口。
+# E：对Zookeepercline端提供服务的端口
+server.1=0.0.0.0:2888:3888;2181
+server.2=zoo2:2888:3888;2181
+server.3=zoo3:2888:3888;2181
+```
+
+测试
+
+```bash
+# 进入容器内部
+docker exec -it zookeeper_zoo3_1 /bin/bash
+# 进入/apache-zookeeper-3.5.5-bin/bin目录
+cd /apache-zookeeper-3.5.5-bin/bin
+# 启动Zookeeper客户端并连接Zookeeper服务端
+# -server localhost:2181：Zookeeper服务器地址为localhost，端口号为2181
+./zkCli.sh -server localhost:2181
+# 创建一条数据
+create /test "hello zookeeper"
+# 获取创建的数据
+get /test
+# 删除数据
+delete /test
+```
+
+# Dubbo
+
+Apache Dubbo是一款高性能、轻量级的开源Java RPC分布式服务框架，它提供了三大核心能力：
+
+1. 面向接口的远程调用
+2. 智能容错和负载均衡
+3. 服务自动注册和发现
+
+[Dubbo官方网站](http://dubbo.apache.org/zh-cn/docs/user/references/protocol/dubbo.html)
+
+[Dubbo github](https://github.com/apache/dubbo)
+
+## Dubbo五大角色
+
+1. Provider：暴露服务的服务提供者。
+2. Consumer：调用远程服务的服务消费者。
+3. Registry：服务注册与发现的注册中心。
+4. Monitor：统计服务的调用次数和调用时间的监控中心。
+5. Container：服务运行容器。
+
+调用关系说明：
+
+- 服务容器`Container`负责启动、加载、运行服务提供者。
+- 服务提供者`Provider`在启动时，向注册中心注册自己提供的服务。
+- 服务消费者`Consumer`在启动时，向注册中心订阅自己所需的服务。
+- 注册中心`Registry`返回服务提供者地址列表给消费者，如果有变更，注册中心将基于长连接推送变更数据给消费者。
+- 服务消费者`Consumer`从提供者地址列表中，基于软负载均衡算法，选一台提供者进行调用，如果调用失败，再选另一台调用。
+- 服务消费者`Consumer`和提供者`Provider`，在内存中累计调用次数和调用时间，定时每分钟发送一次统计数据到监控中心`Monitor`。
+
+## Dubbo管理控制台
+
+[Dubbo管理控制台安装教程](https://github.com/apache/dubbo-admin)
+
+## Dubbo负载均衡
+
+## Kryo高速序列化
+
+## Hystrix熔断器和仪表盘
+
+# Docker安装Nexus3
+
+[docker安装Nexus3教程](https://hub.docker.com/r/sonatype/nexus3)
+
+docker快速运行命令如下
+
+```bash
+docker run -d -p 8081:8081 --name nexus -v /usr/local/docker/nexus-data:/nexus-data --restart=always sonatype/nexus3
+```
+
+
+
+# Docker安装Gitlab
+
+[Docker安装Gitlab教程](https://docs.gitlab.com/omnibus/docker/README.html)
+
+docker快速运行命令如下
+
+```bash
+sudo docker run --detach \
+  --hostname gitlab.example.com \
+  --publish 5443:443 --publish 580:80 --publish 522:22 \
+  --name gitlab \
+  --restart always \
+  --volume /usr/local/docker/gitlab/config:/etc/gitlab \
+  --volume /usr/local/docker/gitlab/logs:/var/log/gitlab \
+  --volume /usr/local/docker/gitlab/data:/var/opt/gitlab \
+  gitlab/gitlab-ce:latest
+```
+
+
+
+# 部署CI/CD
+
+## 搭建私服Maven仓库Nexus
+
+## 持续集成的基本概念
+
+## 使用GitLab Runner实现持续集成
+
+## 使用 Jenkins实现持续交付
+
+# API网关
+
