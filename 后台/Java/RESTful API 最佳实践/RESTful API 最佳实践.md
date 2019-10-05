@@ -1,17 +1,12 @@
 <center><h1>RESTful API 最佳实践</h1></center>
+
 > 本文摘抄自：[RESTful API 最佳实践（阮一峰）](https://mp.weixin.qq.com/s?__biz=MzI4OTA3NDQ0Nw==&mid=2455545564&idx=1&sn=eaca284c548b597afc274ef41c237e62&chksm=fb9cbabccceb33aada88ce308b97f939169be841c36e5c3023ff96d8fdf8f915136027808de6&mpshare=1&scene=23&srcid=0927LkmjmHyUuXGEGqZRXK9W&sharer_sharetime=1569720888826&sharer_shareid=f8be6084b82cc018b018588532bb3fe1#rd)
 
 RESTful 是目前最流行的 API 设计规范，用于 Web 数据接口的设计。
 
 它的大原则容易把握，但是细节不容易做对。本文总结 RESTful 的设计细节，介绍如何设计出易于理解和使用的 API。
 
-![img](RESTful API 最佳实践.assets/640.webp)
-
-##  
-
 # 一、URL 设计
-
-
 
 ## 1.1 动词 + 宾语
 
@@ -33,7 +28,9 @@ RESTful 的核心思想就是，客户端发出的数据操作指令都是"动�
 
 这时，客户端发出的 HTTP 请求，要加上X-HTTP-Method-Override属性，告诉服务器应该使用哪一个动词，覆盖POST方法。
 
-![img](RESTful API 最佳实践.assets/640.webp)
+![img](RESTful%20API%20%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5.assets/640.webp)
+
+
 
 上面代码中，X-HTTP-Method-Override指定本次请求的方法是PUT，而不是POST。
 
@@ -57,21 +54,23 @@ RESTful 的核心思想就是，客户端发出的数据操作指令都是"动�
 
 常见的情况是，资源需要多级分类，因此很容易写出多级的 URL，比如获取某个作者的某一类文章。
 
-![img](RESTful API 最佳实践.assets/640.webp)
+![img](RESTful%20API%20%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5.assets/640-1569740116386.webp)
 
 这种 URL 不利于扩展，语义也不明确，往往要想一会，才能明白含义。
 
 更好的做法是，除了第一级，其他级别都用查询字符串表达。
 
-![img](RESTful API 最佳实践.assets/640.webp)
+![img](RESTful%20API%20%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5.assets/640-1569740129170.webp)
 
 下面是另一个例子，查询已发布的文章。你可能会设计成下面的 URL。
 
-![img](RESTful API 最佳实践.assets/640.webp)
+![img](RESTful%20API%20%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5.assets/640-1569740143514.webp)
 
 查询字符串的写法明显更好。
 
-![img](RESTful API 最佳实践.assets/640.webp)
+![img](RESTful%20API%20%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5.assets/640-1569740157335.webp)
+
+
 
 # 二、状态码
 
@@ -91,7 +90,7 @@ HTTP 状态码就是一个三位数，分成五个类别。
 
 API 不需要1xx状态码，下面介绍其他四类状态码的精确含义。
 
-## 2.2 2xx 状态码
+## 2. 2xx 状态码
 
 200状态码表示操作成功，但是不同的方法可以返回更精确的状态码。
 
@@ -105,7 +104,7 @@ API 不需要1xx状态码，下面介绍其他四类状态码的精确含义。
 
 此外，202 Accepted状态码表示服务器已经收到请求，但还未进行处理，会在未来再处理，通常用于异步操作。下面是一个例子。
 
-![img](RESTful API 最佳实践.assets/640.webp)
+![img](RESTful%20API%20%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5.assets/640-1569740171408.webp)
 
 ## 2.3 3xx 状态码
 
@@ -113,7 +112,7 @@ API 用不到301状态码（永久重定向）和302状态码（暂时重定向�
 
 API 用到的3xx状态码，主要是303 See Other，表示参考另一个 URL。它与302和307的含义一样，也是"暂时重定向"，区别在于302和307用于GET请求，而303用于POST、PUT和DELETE请求。收到303以后，浏览器不会自动跳转，而会让用户自己决定下一步怎么办。下面是一个例子。
 
-![img](RESTful API 最佳实践.assets/640.webp)
+![img](RESTful%20API%20%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5.assets/640-1569740179749.webp)
 
 ## 2.4 4xx 状态码
 
@@ -153,19 +152,19 @@ API 返回的数据格式，不应该是纯文本，而应该是一个 JSON 对�
 
 客户端请求时，也要明确告诉服务器，可以接受 JSON 格式，即请求的 HTTP 头的ACCEPT属性也要设成application/json。下面是一个例子。
 
-![img](RESTful API 最佳实践.assets/640.webp)
+![img](RESTful%20API%20%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5.assets/640-1569740196866.webp)
 
 ## 3.2 发生错误时，不要返回 200 状态码
 
 有一种不恰当的做法是，即使发生错误，也返回200状态码，把错误信息放在数据体里面，就像下面这样。
 
-![img](RESTful API 最佳实践.assets/640-1569721134740.webp)
+![img](RESTful%20API%20%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5.assets/640-1569740203815.webp)
 
 上面代码中，解析数据体以后，才能得知操作失败。
 
 这张做法实际上取消了状态码，这是完全不可取的。正确的做法是，状态码反映发生的错误，具体的错误信息放在数据体里面返回。下面是一个例子。
 
-![img](RESTful API 最佳实践.assets/640.webp)
+![img](RESTful%20API%20%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5.assets/640-1569740212186.webp)
 
 ## 3.3 提供链接
 
@@ -173,11 +172,10 @@ API 的使用者未必知道，URL 是怎么设计的。一个解决方法就是
 
 举例来说，GitHub 的 API 都在 api.github.com 这个域名。访问它，就可以得到其他 URL。
 
-![img](RESTful API 最佳实践.assets/640.webp)
+![img](RESTful%20API%20%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5.assets/640-1569740222332.webp)
 
-上面的回应中，挑一个 URL 访问，又可以得到别的 URL。对于用户来说，不需要记住 URL 设计，只要从 api.github.com 一步步查找就可以了。
+上面的回应，挑一个 URL 访问，又可以得到别的 URL。对于用户来说，不需要记住 URL 设计，只要从 api.github.com 一步步查找就可以了。
 
 HATEOAS 的格式没有统一规定，上面例子中，GitHub 将它们与其他属性放在一起。更好的做法应该是，将相关链接与其他属性分开。
 
-![img](RESTful API 最佳实践.assets/640.webp)
-
+![img](RESTful%20API%20%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5.assets/640-1569740231021.webp)

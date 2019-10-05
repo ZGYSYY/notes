@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE generatorConfiguration
+        PUBLIC "-//mybatis.org//DTD MyBatis Generator Configuration 1.0//EN"
+        "http://mybatis.org/dtd/mybatis-generator-config_1_0.dtd">
+<generatorConfiguration>
+    <!--引入数据库连接配置-->
+    <properties resource="jdbc.properties"/>
+    
+    <context id="Mysql" targetRuntime="Mybatis3Simple" defaultModelType="flat">
+        <property name="beginningDelimiter" value="`"/>
+        <property name="endingDelimiter" value="`"/>
+
+        <!--配置tk.mybatis插件-->
+        <plugin type="tk.mybatis.mapper.generator.MapperPlugin">
+            <property name="mappers" value="tk.mybatis.mapper.MyMapper"/>
+        </plugin>
+
+        <!--配置数据库连接-->
+        <jdbcConnection driverClass="${jdbc.driverClass}" connectionURL="${jdbc.connectionURL}"
+                        userId="${jdbc.username}" password="${jdbc.password}"/>
+
+        <!--配置实体类存放路径-->
+        <javaModelGenerator targetPackage="com.zgy.my.shop.commons.domain"
+                            targetProject="src/main/java"/>
+
+        <!--配置XML存放路径-->
+        <sqlMapGenerator targetPackage="mapper" targetProject="src/main/resources"/>
+
+        <!--配置DAO存放路径-->
+        <javaClientGenerator type="XMLMAPPER" targetPackage="com.zgy.my.shop.commons.mapper"
+                             targetProject="src/main/java"/>
+
+        <!--配置需要生成的表，%表示所有-->
+        <table tableName="%" catalog="my-shop">
+            <!--mysql配置-->
+            <generatedKey column="id" sqlStatement="Mysql" identity="true"/>
+        </table>
+    </context>
+</generatorConfiguration>
