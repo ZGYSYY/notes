@@ -1,5 +1,4 @@
 <center><h1>Maven笔记</h1></center>
-
 # Maven构建过程
 
 1.  清理：将以前编译得到的class字节码文件，为下次编译做准备。
