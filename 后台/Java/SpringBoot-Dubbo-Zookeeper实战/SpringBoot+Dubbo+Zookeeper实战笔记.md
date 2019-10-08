@@ -340,3 +340,12 @@ FastDFS为互联网量身定制，充分考虑冗余备份、负载均衡、线�
 **在搭建FastDFS时，为什么需要用到Nginx？**
 
 因为FastDFS服务端的跟踪器可以部署多台，但是FastDFS的HTTP服务较为简单，无法提供负载均衡等高性能服务，所以需要使用Nginx来做负载均衡弥补上述的缺陷。
+
+## Docker中安装FastDFS
+
+## 使用FastDFS的Java客户端
+
+## Docker中安装Nginx
+
+## 使用Nginx解决跨域问题
+
