@@ -266,9 +266,187 @@ Apache Dubbo是一款高性能、轻量级的开源Java RPC分布式服务框架
 
 ## Dubbo负载均衡
 
+在application.properties中添加如下配置：
+
+```properties
+# 开启服务提供者负载均衡
+# random：随机
+# roundrobin：轮询
+# leastactive：最少活跃调用数
+# consistenthash：一致性Hash
+dubbo.provider.loadbalance=roundrobin
+```
+
 ## Kryo高速序列化
 
+服务提供者和服务消费者中添加如下依赖
+
+```xml
+<dependency>
+    <groupId>de.javakaffee</groupId>
+    <artifactId>kryo-serializers</artifactId>
+</dependency>
+```
+
+在application.properties中添加如下配置
+
+```properties
+dubbo.protocol.serialization=kryo
+```
+
+要让Kryo和FST完全发挥出高性能，最好将那些需要被序列化的类注册到dubbo系统中，例如我们可以实现如下回调接口：
+
+```java
+public class SerializationOptimizerImpl implements SerializationOptimizer {
+
+    @Override
+    public Collection<Class> getSerializableClasses() {
+        List<Class> classes = new LinkedList<>();
+        // classes.add(需要被序列化的类.class);
+        return classes;
+    }
+}
+```
+
+在application.properties中添加如下配置
+
+```properties
+# SerializationOptimizerImpl应该是全限定名，比如：com.zgy.my.shop.commons.dubbo.config.SerializationOptimizerImpl
+dubbo.protocol.optimizer=SerializationOptimizerImpl
+```
+
+**ps**：在对一个类做序列化的时候，可能还级联引用到很多类，比如java集合类。针对这种情况，Kryo已经自动将JDK中常用的类，进行了注册，所以不需要重复注册它们（当然重复注册也没有任何影响），包括：
+
+```java
+GregorianCalendar  
+InvocationHandler  
+BigDecimal  
+BigInteger  
+Pattern  
+BitSet  
+URI  
+UUID  
+HashMap  
+ArrayList  
+LinkedList  
+HashSet  
+TreeSet  
+Hashtable  
+Date  
+Calendar  
+ConcurrentHashMap  
+SimpleDateFormat  
+Vector  
+BitSet  
+StringBuffer  
+StringBuilder  
+Object  
+Object[]  
+String[]  
+byte[]  
+char[]  
+int[]  
+float[]  
+double[]  
+```
+
+由于注册被序列化的类仅仅是出于性能优化的目的，所以即使你忘记了注册某些类也没有关系。事实上，即使不注册任何类，Kryo和FST的性能依然普遍优于hessian和dubbo序列化。
+
 ## Hystrix熔断器和仪表盘
+
+### 熔断器简介
+
+在微服务架构中，根据业务来拆分一个个业务，服务与服务之间可以通过RPC相互调用。为了保证其高可用，单个服务会集群部署。由于网络原因和自身原因，服务并不能保证100%可用，如果单个服务出现问题，调用这个服务就会出现线程阻塞，此时若有大量的请求涌入，Servlet容器的线程资源会被消耗完，导致服务瘫痪。由于服务与服务之间存在依赖性，从而导致故障传播，会对整个微服务系统造成灾难性的严重后果，这就是服务故障的“雪崩”效应。
+
+为了解决这个问题，业界提出了熔断器模型。Netflix开源了Hystrix组件，实现了熔断机制，SpringCloud对这一组件进行了整合。在微服务架构中，一个请求需要调用多个服务是非常常见的，如下图：
+
+![1570593048878](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1570593048878.png)
+
+当较底层的服务如果出现故障，会导致连锁故障。当对特定的服务的调用的不可用达到一个阀值（Hystrix是5秒20次）熔断器将会被打开。
+
+![1570593185010](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1570593185010.png)
+
+熔断器打开后，为了避免连锁故障，通过`fallback`方法可以直接返回一个固定值。
+
+### 使用熔断器
+
+1. 在pom.xml中引入如下依赖：
+
+```xml
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-netflix-hystrix</artifactId>
+</dependency>
+```
+
+2. 在Springboot的启动类上添加`@EnableHystrix`注解
+
+3. 在Service中对应的方法上添加`@HystrixCommand`注解，在调用方法上增加`@HystrixCommand`配置，此时调用会经过Hystrix代理
+
+```java
+@Service(version = "${services.versions.user.v1}")
+@Transactional(readOnly = true)
+public class UserServiceImpl implements UserService {
+
+    @Autowired
+    private UserMapper userMapper;
+	// 两个HystrixProperty配置表示：修改阀值为2秒10次
+    @HystrixCommand(commandProperties = {
+            @HystrixProperty(name = "circuitBreaker.requestVolumeThreshold", value = "10"),
+            @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "2000")
+    },fallbackMethod = "selectAllError")
+    @Override
+    public List<User> selectAll() {
+        return userMapper.selectAll();
+    }
+    
+    /**
+     * 获取用户失败时，Hystrix回调方法
+     * @return
+     */
+    public List<User> selectAllError() {
+        return Collections.emptyList();
+    }
+}
+```
+
+### 使用Hystrix-dashboard熔断器仪表盘
+
+1. 在pom.xml中引入如下依赖：
+
+```xml
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-netflix-hystrix-dashboard</artifactId>
+</dependency>
+```
+
+2. 在Springboot的启动类上添加`@EnableHystrixDashboard`注解
+
+3. 创建hystrix.stream的Servlet配置，添加一个`HystrixDashboardConfiguration`配置类，内容如下：
+
+```java
+/**
+ * @author ZGY
+ * @date 2019/10/8 10:43
+ * @description HystrixDashboardConfiguration
+ */
+@Configuration
+public class HystrixDashboardConfiguration {
+
+    @Bean
+    public ServletRegistrationBean getServlet() {
+        HystrixMetricsStreamServlet streamServlet = new HystrixMetricsStreamServlet();
+        ServletRegistrationBean registrationBean = new ServletRegistrationBean(streamServlet);
+        registrationBean.setLoadOnStartup(1);
+        registrationBean.addUrlMappings("/hystrix.stream");
+        registrationBean.setName("HystrixMetricsStreamServlet");
+        return registrationBean;
+    }
+}
+```
+
+4. 最后访问测试
 
 # Docker安装Nexus3
 
@@ -279,8 +457,6 @@ docker快速运行命令如下
 ```bash
 docker run -d -p 8081:8081 --name nexus -v /usr/local/docker/nexus-data:/nexus-data --restart=always sonatype/nexus3
 ```
-
-
 
 # Docker安装Gitlab
 
@@ -304,11 +480,24 @@ sudo docker run --detach \
 
 # 部署CI/CD
 
-## 搭建私服Maven仓库Nexus
-
 ## 持续集成的基本概念
 
+持续集成指的是，频繁的（一天多次）将代码集成到主干。它的好处有两个：
+
+1. 快速发现错误。没完成一点更新，就集成到主干，可以快速发现错误，定位错误也比较容易。
+2. 防止分支大幅偏离主干。如果不是经常集成，主干又在不断更新，会导致以后集成的难度变大，甚至难以集成。
+
+Martin Fowler说过，“持续集成并不能消除bug，而是让它们非常容易发现和改正。”
+
+持续集成强调开发人员提交新代码之后，立即进行构建、（单元）测试。根据测试结果，我们可以确定新代码和原有代码是否正确的集成在一起。
+
+与持续集成相关的，还有两个概念，分别是**持续交付**和**持续部署**。
+
 ## 使用GitLab Runner实现持续集成
+
+### 基于Docker安装GitLab Runner
+
+
 
 ## 使用 Jenkins实现持续交付
 
@@ -349,3 +538,14 @@ FastDFS为互联网量身定制，充分考虑冗余备份、负载均衡、线�
 
 ## 使用Nginx解决跨域问题
 
+# Solr全文检索
+
+## 什么是Solr
+
+## Docker安装Solr
+
+## Solr中使用分词器——IKAnalyzer
+
+## Solr的基本操作
+
+## SpringBoot整合Solr
