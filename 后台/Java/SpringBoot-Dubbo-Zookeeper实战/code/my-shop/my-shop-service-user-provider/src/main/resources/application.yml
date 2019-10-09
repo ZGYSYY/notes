@@ -1,0 +1,63 @@
+spring:
+  application:
+    name: my-shop-service-user-provider
+  datasource:
+    druid:
+      url: jdbc:mysql://127.0.0.1:3306/my-shop?useUnicode=true&characterEncoding=utf-8&useSSL=false
+      username: root
+      password: root
+      initial-size: 1
+      min-idle: 1
+      max-active: 20
+      test-on-borrow: true
+      driver-class-name: com.mysql.cj.jdbc.Driver
+server:
+  port: 8501
+
+mybatis:
+  type-aliases-package: com.zgy.my.shop.commons.domain
+  mapper-locations: classpath:mapper/*.xml
+
+services:
+  versions:
+    user:
+      v1: 1.0.0
+
+dubbo:
+  scan:
+    base-packages: com.zgy.my.shop.service.user.provider.api.impl
+  application:
+    id: my-shop-service-user-provider
+    name: my-shop-service-user-provider
+    qos-port: 22222
+    qos-enable: true
+  protocol:
+    id: dubbo
+    name: dubbo
+    host: 192.168.1.166
+    port: 20881
+    status: server
+    serialization: kryo
+  registry:
+    id: zookeeper
+    address: zookeeper://192.168.1.168:2181?backup=192.168.1.168:2182,192.168.1.168:2183
+
+#management:
+#  endpoint:
+#    dubbo:
+#      enabled: true
+#    dubbo-shutdown:
+#      enabled: true
+#    dubbo-configs:
+#      enabled: true
+#    dubbo-services:
+#      enabled: true
+#    dubbo-references:
+#      enabled: true
+#    dubbo-properties:
+#      enabled: true
+#  health:
+#    dubbo:
+#      status:
+#        default: memory
+#        extras: load,threadpool
