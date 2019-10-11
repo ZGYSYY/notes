@@ -501,7 +501,78 @@ Martin Fowler说过，“持续集成并不能消除bug，而是让它们非常�
 
 ### 基于Docker安装GitLab Runner
 
+拉取镜像
 
+```bash
+docker pull gitlab/gitlab-runner
+```
+
+创建容器并运行
+
+```bash
+docker run -d --name gitlab-runner --restart always \
+  -v /srv/gitlab-runner/config:/etc/gitlab-runner \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  gitlab/gitlab-runner:latest
+```
+
+容器如果创建成功，并且允许成功，注册gitlab-runner
+
+```bash
+docker exec -it 容器id gitlab-runner register
+```
+
+根据提示，配置相关数据
+
+![1570765020973](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1570765020973.png)
+
+刷新GitLab页面，查看GitLab Runner是否配置成功，成功结果如下：
+
+![1570765137988](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1570765137988.png)
+
+**Note**：参考链接
+
+> [docker安装gitLab runner](https://docs.gitlab.com/runner/install/docker.html)
+>
+> [docker中注册gitLab runner](https://docs.gitlab.com/runner/register/index.html#docker)
+
+## 实现持续集成
+
+在Java项目的根目录下创建`.gitlab-ci.yml`文件，内容如下：
+
+```yml
+stages:
+  - test
+
+test:
+  stage: test
+  script:
+    - echo "Hello GitLab Runner"
+```
+
+然后提交代码到gitLab，在gitLab中找到提交的项目，找到左侧菜单中的`CI/CD`选项，选择`流水线`，查看构建结果，如果出现下面内容，则持续集成成功
+
+![1570767291223](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1570767291223.png)
+
+持续集成成功后，可以点击【已通过】按钮，查看详情，如图所示：
+
+![1570767512310](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1570767512310.png)
+
+![1570767551518](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1570767551518.png)
+
+![1570767621802](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1570767621802.png)
+
+还可以进入gitLab runner服务器，进入【home】目录下，找到提交的代码，如图所示：
+
+![1570767711003](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1570767711003.png)
+
+
+
+**Note**：如果在安装gitLab时，端口映射不是默认的80端口，需要在gitLab runner的配置文件中，添加如下内容：
+
+```toml
+clone_url = "ip地址和端口号"
+```
 
 ## 使用 Jenkins实现持续交付
 

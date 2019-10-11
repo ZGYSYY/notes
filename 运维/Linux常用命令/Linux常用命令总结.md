@@ -520,3 +520,17 @@ curl -fsSL url链接：获取url链接的内容。
 - s：静默模式。不输出任何东西。
 - S：当有错误信息时，显示错误。
 - L：当请求放回301（重定向）状态码时，会访问新的网址。
+
+# 查看Linux内核与版本
+
+- uname -a
+
+  ![1570762324882](Linux%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4%E6%80%BB%E7%BB%93.assets/1570762324882.png)
+
+- cat /proc/version
+
+- lsb_release -a
+
+- cat /etc/redhat-release，这种方法只适合Redhat系的Linux。
+
+- cat /etc/issue，这种方法通用。
