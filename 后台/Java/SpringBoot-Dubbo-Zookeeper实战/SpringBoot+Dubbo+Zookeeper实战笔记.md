@@ -120,6 +120,10 @@ Zookeeper集群是一个一主多从结构。在更新数据时，首先会更�
 
 [参考：ZAB协议详解](https://dbaplus.cn/news-141-1875-1.html)
 
+## Docker-compose安装
+
+[参考：Docker-compose](https://docs.docker.com/compose/install/)
+
 # Docker中安装Zookeeper集群
 
 在`/usr/local/`创建`docker`目录和`Zookeeper`目录
