@@ -598,7 +598,15 @@ test:
 
 ![1570767711003](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1570767711003.png)
 
- 
+###  基于gitlab runner镜像创建新镜像
+
+该知识点中，利用gitlab runner基础镜像，新建一个Dockerfile文件重新构建一个新镜像，该镜像中新增如下软件支持：
+
+- jdk
+- maven
+- docker（docker中安装docker）
+
+
 
 **Note**：如果在安装gitLab时，端口映射不是默认的80端口，需要在gitLab runner的配置文件中，添加如下内容：
 
