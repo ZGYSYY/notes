@@ -534,3 +534,73 @@ curl -fsSL url链接：获取url链接的内容。
 - cat /etc/redhat-release，这种方法只适合Redhat系的Linux。
 
 - cat /etc/issue，这种方法通用。
+
+# Ubuntu 环境变量设置方法
+
+## 对所有用户生效，永久的
+
+- 在/etc/profile文件中添加变量
+
+  ```bash
+  # 打开文件 (以设置java环境为例)
+  vi /etc/profile
+  # 在文末加入 
+    # 注意：1）linux用冒号“:”来分隔路径, windows用分号;来分割
+  	   # 2）CLASSPATH中当前目录“.”不能丢,把当前目录丢掉也是常见的错误。
+  	   # 3) export是把这变量导出为全局变量。
+  	   # 4) 严格区分大小写。
+  export JAVA_HOME=/usr/share/jdk1.8.0_05
+  export PATH=$JAVA_HOME/bin:$PATH
+  export CLASSPATH=./JAVA_HOME/lib:$JAVA_HOME/jre/lib
+  # 生效
+  source /etc/profile
+  ```
+
+- 在/etc/environment 中添加变量
+
+  ```bash
+  # enviroment文件比较不同, 原文件应为PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games" 的形式
+  # 直接在后面加上冒号和路径即可
+  PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/etc/apache/bin"
+  PRESTO="/home/zhen/software/PRESTO/presto"
+  ```
+
+## 对单一用户生效，永久的
+
+- 修改/etc/bash.bashrc
+
+- 修改~/.bashrc
+
+- 修改~/.profile （有时候是 ~/.bash_profile，或者 ~/.bash_login）
+
+  ```bash
+  # 与 /etc/profile 文件的添加方法相同
+  ```
+
+## 只对当前shell有效，临时的
+
+- 直接运行export命令定义变量
+
+  ```bash
+  # 注意：＝ 即等号两边不能有任何空格
+  export SCHED=/home/zhen/software/sched_11.4
+  export PATH=$PATH:/etc/apache/bin
+  export PATH=/etc/apache/bin:$PATH
+  ```
+
+**使得设置立即生效**
+
+```bash
+# for sys
+source /etc/environment
+# for all users
+source /etc/profile
+# for single user
+source ~/.bashrc
+# or logout the system.
+```
+
+**参考链接如下**：
+
+> [Ubuntu 环境变量设置方法](http://zhaozhen.me/2017/09/15/ubuntu-evm.html)
+
