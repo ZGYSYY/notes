@@ -90,9 +90,11 @@
             <url>http://192.168.1.169:8081/repository/maven-public/</url>
             <releases>
                 <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
             </releases>
             <snapshots>
                 <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
             </snapshots>
         </repository>
     </repositories>
