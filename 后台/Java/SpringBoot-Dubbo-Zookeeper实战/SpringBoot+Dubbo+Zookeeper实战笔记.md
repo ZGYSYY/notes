@@ -5,11 +5,15 @@ Spring Boot + Spring Cloud：组件多，功能完备。
 
 Spring Boot + Dubbo + Zookeeper：组件少，功能不太完备。
 
+
+
 # 什么是高可用
 
 - 一直可以使用
 - 能支持高并发
 - 具有高性能
+
+
 
 # 四大问题
 
@@ -45,9 +49,13 @@ Spring Boot + Dubbo + Zookeeper：组件少，功能不太完备。
 
 PS：其实最大问题就是网络不可靠。
 
+
+
 # 什么是Zookeeper
 
 Zookeeper是一种**分布式协调服务**，用于管理大型主机。在分布式环境中协调和管理服务是一个复杂的过程。Zookeeper通过其简单的架构和API解决了这个问题。Zookeeper允许开发人员专注于核心应用程序逻辑，而不必担心应用程序的分布式特性。
+
+
 
 # 分布式锁应具备条件
 
@@ -58,12 +66,16 @@ Zookeeper是一种**分布式协调服务**，用于管理大型主机。在分�
 - 具备锁失效机制，防止出现死锁
 - 具备非阻塞特性，即没有获取到锁立即返回获取锁失败。
 
+
+
 # 分布式锁实现
 
 - Zookeeper
 - Memcache
 - Redis
 - Chubby
+
+
 
 ## 通过Redis来实现分布式锁
 
@@ -73,10 +85,14 @@ Zookeeper是一种**分布式协调服务**，用于管理大型主机。在分�
 2. 释放锁：使用`del`命令删除对应的数据。
 3. 锁超时：为了防止某些特殊情况下，锁没有得到释放，因此需要实现一个在规定时间内，如果锁没有被释放，将自动调用`del`命令来释放锁。
 
+
+
 # Zookeeper两大功能
 
 1. 分布式锁。
 2. 服务注册与发现。
+
+
 
 # Zookeeper的数据模型
 
@@ -95,6 +111,8 @@ Znede中包含的元素如下
 
 需要注意一点，Zookeeper是为读多写少的场景所设计。Znode并不是用来存储大规模业务数据的地方，而是用于存储少量的状态和配置信息的地方，所以规定**每个节点的数据大小不能超过1MB**。
 
+
+
 # Zookeeper的基本操作
 
 - 创建节点：create
@@ -106,9 +124,13 @@ Znede中包含的元素如下
 
 在上面的这些操作中，`getData`、`exists`、`getChildren`属于读操作，Zookeeper客户端在进行读操作的时候，可以选择是否设置`watch`选项，通过Zookeeper的**事件通知机制**，在服务端中，当被Zookeeper客户端watch的节点被修改（删除、修改）时，Zookeeper服务端会异步通知Zookeeper客户端当前数据被修改了。
 
+
+
 # Zookeeper的事件通知机制
 
 当用户访问某个服务的时候，会在Gateway（网关）中根据请求路径（如：user/info）来确定用户需要访问哪个服务，并确定该服务所对应的服务器IP地址，如果在网关中没有找到所访问路径的服务器IP地址，在Gateway中就会向Zookeeper服务器中发送getData(路径,whach)命令，在Zookeeper服务器获取对应路径的IP地址，并将查询的IP地址在Gateway（网关）中保存一份，这样就可以在下次请求该路径时，就不会再访问Zookeeper服务器。因为Gateway在向向Zookeeper服务器中发送getData命令的时候添加了`whach`选项，当我们的某个服务器宕机的时候，Zookeeper服务器就会异步通知Gateway，告诉Gateway哪台机器宕机了，这时Gateway就会在自己内部保存的IP地址中将那台宕机的IP地址删除掉。
+
+
 
 # Zookeeper集群
 
@@ -120,9 +142,13 @@ Zookeeper集群是一个一主多从结构。在更新数据时，首先会更�
 
 [参考：ZAB协议详解](https://dbaplus.cn/news-141-1875-1.html)
 
+
+
 ## Docker-compose安装
 
 [参考：Docker-compose](https://docs.docker.com/compose/install/)
+
+
 
 # Docker中安装Zookeeper集群
 
@@ -239,6 +265,8 @@ delete /test
 
 > [什么是Zookeeper？](../什么是ZooKeeper/什么是ZooKeeper.md)
 
+
+
 # Dubbo
 
 Apache Dubbo是一款高性能、轻量级的开源Java RPC分布式服务框架，它提供了三大核心能力：
@@ -250,6 +278,8 @@ Apache Dubbo是一款高性能、轻量级的开源Java RPC分布式服务框架
 [Dubbo官方网站](http://dubbo.apache.org/zh-cn/docs/user/references/protocol/dubbo.html)
 
 [Dubbo github](https://github.com/apache/dubbo)
+
+
 
 ## Dubbo五大角色
 
@@ -268,9 +298,13 @@ Apache Dubbo是一款高性能、轻量级的开源Java RPC分布式服务框架
 - 服务消费者`Consumer`从提供者地址列表中，基于软负载均衡算法，选一台提供者进行调用，如果调用失败，再选另一台调用。
 - 服务消费者`Consumer`和提供者`Provider`，在内存中累计调用次数和调用时间，定时每分钟发送一次统计数据到监控中心`Monitor`。
 
+
+
 ## Dubbo管理控制台
 
 [Dubbo管理控制台安装教程](https://github.com/apache/dubbo-admin)
+
+
 
 ## Dubbo负载均衡
 
@@ -284,6 +318,8 @@ Apache Dubbo是一款高性能、轻量级的开源Java RPC分布式服务框架
 # consistenthash：一致性Hash
 dubbo.provider.loadbalance=roundrobin
 ```
+
+
 
 ## Kryo高速序列化
 
@@ -360,6 +396,8 @@ double[]
 
 由于注册被序列化的类仅仅是出于性能优化的目的，所以即使你忘记了注册某些类也没有关系。事实上，即使不注册任何类，Kryo和FST的性能依然普遍优于hessian和dubbo序列化。
 
+
+
 ## Hystrix熔断器和仪表盘
 
 ### 熔断器简介
@@ -375,6 +413,8 @@ double[]
 ![1570593185010](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1570593185010.png)
 
 熔断器打开后，为了避免连锁故障，通过`fallback`方法可以直接返回一个固定值。
+
+
 
 ### 使用熔断器
 
@@ -418,6 +458,8 @@ public class UserServiceImpl implements UserService {
 }
 ```
 
+
+
 ### 使用Hystrix-dashboard熔断器仪表盘
 
 1. 在pom.xml中引入如下依赖：
@@ -456,6 +498,8 @@ public class HystrixDashboardConfiguration {
 
 4. 最后访问测试
 
+
+
 # Docker安装Nexus3
 
 [docker安装Nexus3教程](https://hub.docker.com/r/sonatype/nexus3)
@@ -465,6 +509,8 @@ docker快速运行命令如下
 ```bash
 docker run -d -p 8081:8081 --name nexus -v /usr/local/docker/nexus-data:/nexus-data --restart=always sonatype/nexus3
 ```
+
+
 
 # Docker安装Gitlab
 
@@ -487,6 +533,8 @@ sudo docker run --detach \
 
 
 # 部署CI/CD
+
+
 
 ## 持续集成的基本概念
 
@@ -533,7 +581,11 @@ Jobs（任务），表示构建工作，表示某个Stage里面执行的工作�
 
 ![1570772927370](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1570772927370.png)
 
+
+
 ## 使用GitLab Runner实现持续集成
+
+
 
 ### 基于Docker安装GitLab Runner
 
@@ -571,6 +623,8 @@ docker exec -it 容器id gitlab-runner register
 > [docker安装gitLab runner](https://docs.gitlab.com/runner/install/docker.html)
 >
 > [docker中注册gitLab runner](https://docs.gitlab.com/runner/register/index.html#docker)
+
+
 
 ### 实现简单持续集成
 
@@ -770,11 +824,99 @@ source /etc/profile
 
 问题就能解决。
 
+安装Docker，进入容器内部，执行以下命令
+
+```bash
+# 安装一些通用工具
+apt-get install \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg-agent \
+    software-properties-common
+# 添加GPG key
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+# 验证GPG key
+apt-key fingerprint 0EBFCD88
+# 添加docker稳定软件源，add-apt-repository其实就是在/etc/apt/source.list文件中追加一条内容
+add-apt-repository \
+   "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+   $(lsb_release -cs) \
+   stable"
+# 因为是在docker中安装docker，所以只需安装docker-ce-cli(docker客户端)即可，docker in docker模# 式，内部docker和外部docker是兄弟关系，内部docker实际上操作的也是外部docker的内容
+apt-get install docker-ce-cli
+# 创建docker文件夹
+mkdir /etc/docker
+# 添加docker加速镜像地址并保存
+vim daemon.json
+```
+
+daemon.json内容如下：
+
+```bash
+{
+  "registry-mirrors": ["https://jtpbxytq.mirror.aliyuncs.com"]
+}
+```
+
+退出容器，将容器外部的docker-compose拷贝到容器内部
+
+```bash
+docker cp /usr/local/soft/docker-compose 容器id:/usrl/local/share/
+```
+
+进入容器内部
+
+```bash
+docker exec -it 容器id /bin/bash
+# 进入docker-compose所在目录
+cd /usrl/local/share/
+# 给docker-compose添加执行权限
+chmod +x docker-compose
+# 创建软连接，使其可以在任何地方使用
+ln -s /usrl/local/share/docker-compose /usr/bin/docker-compose
+# 回到家目录
+cd ~
+# 测试docker-compose是否安装成功
+docker-compose version
+```
+
+docker-compose安装成功的结果如下图所示：
+
+![1570900624549](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1570900624549.png)
+
+以上步骤之后，退出容器，将当前容器制作为镜像
+
+```bash
+docker commit -m '镜像描述' -a '镜像作者' 镜像id 镜像名:TAG
+```
+
+基于上面创建的镜像，创建容器，并运行
+
+```bash
+docker run -d --name my-gitlab-runner --restart always \
+  -v /srv/gitlab-runner/config:/etc/gitlab-runner \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  创建的镜像名:TAG
+```
+
+**Note**：【docker.sock】文件的挂载，很关键，只有挂载该文件到容器内，容器内部的docker-cli（docker客户端）才能使用容器外部的docker服务，这就是一种**Docker in Docker** 模式。
+
+后续步骤参考[基于Docker安装GitLab Runner](#基于Docker安装GitLab Runner)
+
+
+
 ## 使用 Jenkins实现持续交付
+
+
 
 # API网关
 
+
+
 # 分布式文件系统FastDFS
+
+
 
 ## 什么是FastDFS
 
@@ -801,22 +943,42 @@ FastDFS为互联网量身定制，充分考虑冗余备份、负载均衡、线�
 
 因为FastDFS服务端的跟踪器可以部署多台，但是FastDFS的HTTP服务较为简单，无法提供负载均衡等高性能服务，所以需要使用Nginx来做负载均衡弥补上述的缺陷。
 
+
+
 ## Docker中安装FastDFS
+
+
 
 ## 使用FastDFS的Java客户端
 
+
+
 ## Docker中安装Nginx
+
+
 
 ## 使用Nginx解决跨域问题
 
+
+
 # Solr全文检索
+
+
 
 ## 什么是Solr
 
+
+
 ## Docker安装Solr
+
+
 
 ## Solr中使用分词器——IKAnalyzer
 
+
+
 ## Solr的基本操作
+
+
 
 ## SpringBoot整合Solr
