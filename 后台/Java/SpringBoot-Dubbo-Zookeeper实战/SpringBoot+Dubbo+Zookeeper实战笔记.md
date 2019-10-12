@@ -602,6 +602,16 @@ test:
 
 ![1570767711003](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1570767711003.png)
 
+
+
+**Note**：如果在安装gitLab时，端口映射不是默认的80端口，需要在gitLab runner的配置文件中，添加如下内容：
+
+```toml
+clone_url = "ip地址和端口号"
+```
+
+
+
 ###  基于gitlab runner镜像创建新镜像
 
 该知识点中，利用gitlab runner基础镜像，新建一个Dockerfile文件重新构建一个新镜像，该镜像中新增如下软件支持：
@@ -610,13 +620,155 @@ test:
 - maven
 - docker（docker中安装docker）
 
+创建gitlab-runner容器，并后台运行
 
-
-**Note**：如果在安装gitLab时，端口映射不是默认的80端口，需要在gitLab runner的配置文件中，添加如下内容：
-
-```toml
-clone_url = "ip地址和端口号"
+```bash
+docker run -d --name="gitlab-runner" gitlab/gitlab-runner
 ```
+
+进入容器内部
+
+```bash
+docker exec -it 容器id /bin/bash
+```
+
+查看linux版本，因为gitlab-runner镜像是基于ubuntu镜像创建的镜像，所以需要知道linux版本，用于后面配置apt软件源（配置apt软件源时，不同的版本配置是不一样的，如果配置错误，会导致很多软件包安装失败，超级坑）
+
+```bash
+cat /etc/issue
+```
+
+通过上面的命令，了解到gitlab-runner是基于**Ubuntu 18.04.3 LTS**镜像创建的镜像，接下来就是配置apt软件源，访问https://opsx.alibaba.com/mirror，操作如下图：
+
+![1570847867973](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1570847867973.png)
+
+得到下图结果
+
+![1570847907101](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1570847907101.png)
+
+根据自己Ubuntu版本来选择配置，这里我使用的是Ubuntu18.04
+
+```bash
+# 备份apt源配置文件
+cp /etc/apt/sources.list /etc/apt/sources.list.back
+# 编辑apt源配置文件,并保存配置文件
+vim /etc/apt/sources.list
+```
+
+sources.list配置如下：
+
+```bash
+deb http://mirrors.aliyun.com/ubuntu/ bionic main restricted universe multiverse
+deb http://mirrors.aliyun.com/ubuntu/ bionic-security main restricted universe multiverse
+deb http://mirrors.aliyun.com/ubuntu/ bionic-updates main restricted universe multiverse
+deb http://mirrors.aliyun.com/ubuntu/ bionic-proposed main restricted universe multiverse
+deb http://mirrors.aliyun.com/ubuntu/ bionic-backports main restricted universe multiverse
+```
+
+```bash
+# 更新软件数据库
+apt-get update -y
+# 升级已安装软件
+apt-get upgrade -y
+```
+
+退出容器，将容器外部的【jdk-8u221-linux-x64.tar.gz】拷贝到容器内部
+
+```bash
+docker cp /usr/local/soft/jdk-8u221-linux-x64.tar.gz 容器id:/usrl/local/share/
+```
+
+进入容器内部
+
+```bash
+docker exec -it 容器id /bin/bash
+```
+
+安装JDK
+
+```bash
+# 在容器内部，进入/usr/local/share/目录
+cd /usr/local/share/
+# 解压jdk-8u221-linux-x64.tar.gz
+tar -zxvf jdk-8u221-linux-x64.tar.gz
+# 删除jdk-8u221-linux-x64.tar.gz
+rm -rf jdk-8u221-linux-x64.tar.gz
+# 配置JAVA_HOME环境变量
+vim /etc/profile
+```
+
+在【/etc/profile】中添加如下配置，保存并退出：
+
+```bash
+export JAVA_HOME=/usr/local/share/jdk1.8.0_221/
+export PATH=$PATH:$JAVA_HOME/bin
+```
+
+```bash
+# 让环境变量生效
+source /etc/profile
+# 测试JDK环境变量是否配置成功
+java -version
+```
+
+出现下图所示，表示JDK环境变量配置成功
+
+![1570849596410](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1570849596410.png)
+
+退出容器，将容器外部的【apache-maven-3.6.2-bin.tar.gz】拷贝到容器内部
+
+```bash
+docker cp /usr/local/soft/apache-maven-3.6.2-bin.tar.gz 容器id:/usrl/local/share/
+```
+
+进入容器内部
+
+```bash
+docker exec -it 容器id /bin/bash
+```
+
+安装Maven
+
+```bash
+# 在容器内部，进入/usr/local/share/目录
+cd /usr/local/share/
+# 解压apache-maven-3.6.2-bin.tar.gz
+tar -zxvf apache-maven-3.6.2-bin.tar.gz
+# 删除apache-maven-3.6.2-bin.tar.gz
+rm -rf apache-maven-3.6.2-bin.tar.gz
+# 配置MAVEN_HOME环境变量
+vim /etc/profile
+```
+
+在【/etc/profile】中添加如下配置，保存并退出：
+
+```bash
+export MAVEN_HOME=/usr/local/share/apache-maven-3.6.2/
+export PATH=$PATH:$JAVA_HOME/bin:$MAVEN_HOME/bin
+```
+
+```bash
+# 让环境变量生效
+source /etc/profile
+# 测试Maven环境变量是否配置成功
+mvn -v
+```
+
+出现下图所示，表示JDK环境变量配置成功
+
+![1570851219994](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1570851219994.png)
+
+注意一个现象，当退出docker容器后再进入docker容器后，所配置的环境变量就无效的问题，解决办法如下
+
+```bash
+# 进入用户目录
+cd ~
+# 在【.bashrc】文件后追加如下内容
+source /etc/profile
+# 保存并退出
+```
+
+问题就能解决。
 
 ## 使用 Jenkins实现持续交付
 

@@ -604,3 +604,43 @@ source ~/.bashrc
 
 > [Ubuntu 环境变量设置方法](http://zhaozhen.me/2017/09/15/ubuntu-evm.html)
 
+# 关于ubuntu的sources.list总结
+
+## 一、作用
+
+   文件/etc/apt/sources.list是一个普通可编辑的文本文件，保存了ubuntu软件更新的源服务器的地址。和sources.list功能一样的是/etc/apt/sources.list.d/*.list(*代表一个文件名，只能由字母、数字、下划线、英文句号组成)。sources.list.d目录下的*.list文件为在单独文件中写入源的地址提供了一种方式，通常用来安装第三方的软件。
+
+```
+deb http://archive.ubuntu.com/ubuntu/ trusty main restricted universe multiverse
+deb http://archive.ubuntu.com/ubuntu/ trusty-security main restricted universe multiverse
+deb http://archive.ubuntu.com/ubuntu/ trusty-updates main restricted universe multiverse
+deb http://archive.ubuntu.com/ubuntu/ trusty-proposed main restricted universe multiverse
+deb http://archive.ubuntu.com/ubuntu/ trusty-backports main restricted universe multiverse
+deb-src http://archive.ubuntu.com/ubuntu/ trusty main restricted universe multiverse
+deb-src http://archive.ubuntu.com/ubuntu/ trusty-security main restricted universe multiverse
+deb-src http://archive.ubuntu.com/ubuntu/ trusty-updates main restricted universe multiverse
+deb-src http://archive.ubuntu.com/ubuntu/ trusty-proposed main restricted universe multiverse
+deb-src http://archive.ubuntu.com/ubuntu/ trusty-backports main restricted universe multiverse
+```
+
+   如上是ubuntu官方sources.list文件内容，具体地含义如下：
+
+   每一行的开头是deb或者deb-src，分别表示直接通过.deb文件进行安装和通过源文件的方式进行安装。
+
+   deb或者deb-src字段之后，是一段URL，之后是五个用空格隔开的字符串，分别对应相应的目录结构。在浏览器中输入http://archive.ubuntu.com/ubuntu/，并进入dists目录，可以发现有5个目录和前述sources.list文件中的第三列字段相对应。任选其中一个目录进入，可以看到和sources.list后四列相对应的目录结构。
+
+更多内容可以使用man source.list获得。
+
+![img](Linux%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4%E6%80%BB%E7%BB%93.assets/051605496117149.png)![img](Linux%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4%E6%80%BB%E7%BB%93.assets/051606162679773.png)
+
+ 
+
+## 二、源的选择
+
+   ubuntu官方有自身的软件源，直接从官方的软件源获取数据的速度比较慢。而通过国内的一些的源的镜像进行更新一般能够获得比官方源更快的速度，不过不同国内的源的下载速度也会不一样。[这里](http://wiki.ubuntu.org.cn/源列表)给出了较为详细的ubuntu软件源列表，个人现在觉得选取ubuntu软件源的方法是首先选择位于相同地区的源，然后进行ping操作，时延不是太高即可。对比aliyun、sohu、ubuntu官方ping的数据，可以发现aliyun的源在时延上表现最好。
+
+![img](Linux%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4%E6%80%BB%E7%BB%93.assets/051619280959698.png)
+
+![img](Linux%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4%E6%80%BB%E7%BB%93.assets/051620001422176.png)
+
+![img](Linux%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4%E6%80%BB%E7%BB%93.assets/051620372528304.png)
