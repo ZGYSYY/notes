@@ -906,6 +906,10 @@ docker run -d --name my-gitlab-runner --restart always \
 >
 > 删除无用docker虚拟网卡命令为：docker network prune，不询问删除可以加一个`-f`。
 
+
+
+> **ps**：容器内的服务是能够访问访问同宿主机同一局域网的ip的，如果不能访问，应该是iptables问题，建议重启服务。
+
 ## 使用 Jenkins实现持续交付
 
 ## 什么是Jenkins
