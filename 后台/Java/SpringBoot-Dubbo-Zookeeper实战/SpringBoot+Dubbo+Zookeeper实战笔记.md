@@ -893,10 +893,26 @@ docker run -d --name my-gitlab-runner --restart always \
 利用docker的Dockerfile将打好的包放入一个java运行环境中，然后在运行即可。
 
 > **ps**：上述步骤中，我们可以使用docker-compose来简化容器的启动和关闭，这意味着要创建一个【docker-compose.yml】文件。当我们需要对某个服务进行监听是否启动时（如果某个服务启动了，我这个服务才能启动成功）的情况时，可以使用github上一个叫【[dockerize](https://github.com/jwilder/dockerize)】的软件来实现，具体实现看代码中Dockerfile的配置，不做过多描述。
+>
+> 上面的步骤需要掌握docker-compose的基本使用和Dockerfile文件的编写，才能实现。
+
+**单台宿主机，不同容器之间能够互相通信的方法**
+
+让需要互相通信的容器，使用同一块docker虚拟网卡即可。
+
+> **ps**：创建docker虚拟网卡的命令为：docker network create 网卡名
+>
+> 查看docker虚拟网卡的命令为：docker network ls
+>
+> 删除无用docker虚拟网卡命令为：docker network prune，不询问删除可以加一个`-f`。
 
 ## 使用 Jenkins实现持续交付
 
+## 什么是Jenkins
 
+Jenkins是一个开源软件项目，是基于Java开发的一种持续集成工具，用于监控持续重复的工作，旨在提供一个开放易用的软件平台，使软件的持续集成变成可能。
+
+官方网站： https://jenkins.io/zh/
 
 # API网关
 
