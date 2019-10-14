@@ -583,11 +583,7 @@ Jobs（任务），表示构建工作，表示某个Stage里面执行的工作�
 
 
 
-## 使用GitLab Runner实现持续集成
-
-
-
-### 基于Docker安装GitLab Runner
+## 在Docker中安装GitLab-Runner实现持续集成
 
 拉取镜像
 
@@ -623,10 +619,6 @@ docker exec -it 容器id gitlab-runner register
 > [docker安装gitLab runner](https://docs.gitlab.com/runner/install/docker.html)
 >
 > [docker中注册gitLab runner](https://docs.gitlab.com/runner/register/index.html#docker)
-
-
-
-### 实现简单持续集成
 
 在Java项目的根目录下创建`.gitlab-ci.yml`文件，内容如下：
 
@@ -664,15 +656,13 @@ test:
 clone_url = "ip地址和端口号"
 ```
 
+##  在Docker中安装GitLab-runner实现持续集成和自动部署
 
-
-###  基于gitlab runner镜像创建新镜像
-
-该知识点中，利用gitlab runner基础镜像，新建一个Dockerfile文件重新构建一个新镜像，该镜像中新增如下软件支持：
+该知识点中，利用gitlab runner基础镜像，重新构建一个新镜像来实现自动部署功能，该镜像中新增如下软件支持：
 
 - jdk
 - maven
-- docker（docker中安装docker）
+- docker-cli（docker in docker）
 
 创建gitlab-runner容器，并后台运行
 
@@ -769,6 +759,18 @@ java -version
 
 ![1570849596410](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1570849596410.png)
 
+> **ps**：解决每次登录docker容器内部，配置的环境变量失效问题
+>
+> ```bash
+> # 进入当前用户家目录
+> cd ~
+> # 在【.bashrc】文件中追加如下内容，然后保存并退出
+> ```
+>
+> ```bash
+> source /etc/profile
+> ```
+
 退出容器，将容器外部的【apache-maven-3.6.2-bin.tar.gz】拷贝到容器内部
 
 ```bash
@@ -811,18 +813,6 @@ mvn -v
 出现下图所示，表示JDK环境变量配置成功
 
 ![1570851219994](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1570851219994.png)
-
-注意一个现象，当退出docker容器后再进入docker容器后，所配置的环境变量就无效的问题，解决办法如下
-
-```bash
-# 进入用户目录
-cd ~
-# 在【.bashrc】文件后追加如下内容
-source /etc/profile
-# 保存并退出
-```
-
-问题就能解决。
 
 安装Docker，进入容器内部，执行以下命令
 
@@ -903,6 +893,8 @@ docker run -d --name my-gitlab-runner --restart always \
 **Note**：【docker.sock】文件的挂载，很关键，只有挂载该文件到容器内，容器内部的docker-cli（docker客户端）才能使用容器外部的docker服务，这就是一种**Docker in Docker** 模式。
 
 后续步骤参考[基于Docker安装GitLab Runner](#基于Docker安装GitLab Runner)
+
+
 
 
 
