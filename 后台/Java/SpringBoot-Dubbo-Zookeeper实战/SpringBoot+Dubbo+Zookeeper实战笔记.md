@@ -814,7 +814,9 @@ mvn -v
 
 ![1570851219994](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1570851219994.png)
 
-安装Docker，进入容器内部，执行以下命令
+> **ps**：如果想让maven获取jar包速度快些，可以配置maven仓库的地址，该步骤比较简单，所以没有记录。
+
+安装docker-cli，进入容器内部，执行以下命令
 
 ```bash
 # 安装一些通用工具
@@ -835,18 +837,6 @@ add-apt-repository \
    stable"
 # 因为是在docker中安装docker，所以只需安装docker-ce-cli(docker客户端)即可，docker in docker模# 式，内部docker和外部docker是兄弟关系，内部docker实际上操作的也是外部docker的内容
 apt-get install docker-ce-cli
-# 创建docker文件夹
-mkdir /etc/docker
-# 添加docker加速镜像地址并保存
-vim daemon.json
-```
-
-daemon.json内容如下：
-
-```bash
-{
-  "registry-mirrors": ["https://jtpbxytq.mirror.aliyuncs.com"]
-}
 ```
 
 退出容器，将容器外部的docker-compose拷贝到容器内部
@@ -890,13 +880,19 @@ docker run -d --name my-gitlab-runner --restart always \
   创建的镜像名:TAG
 ```
 
-**Note**：【docker.sock】文件的挂载，很关键，只有挂载该文件到容器内，容器内部的docker-cli（docker客户端）才能使用容器外部的docker服务，这就是一种**Docker in Docker** 模式。
+> **Note**：【docker.sock】文件的挂载，很关键，只有挂载该文件到容器内，容器内部的docker-cli（docker客户端）才能使用容器外部的docker服务，这就是一种**Docker in Docker** 模式。
 
-后续步骤参考[基于Docker安装GitLab Runner](#基于Docker安装GitLab Runner)
+**到这里，我们可以基于上面创建的容器实现自动部署功能**
 
+实现自动部署的基本流程如下：
 
+在上面持续集成中，我们知道，当一个项目持续集成成功后，会在gitlab-runner服务器的【/home/gitlab-runner/builds/???/?】目录下（？：表示不确定的目录），看到我们上传到gitlab的项目代码。
 
+利用Maven对该项目进行打包。
 
+利用docker的Dockerfile将打好的包放入一个java运行环境中，然后在运行即可。
+
+> **ps**：上述步骤中，我们可以使用docker-compose来简化容器的启动和关闭，这意味着要创建一个【docker-compose.yml】文件。当我们需要对某个服务进行监听是否启动时（如果某个服务启动了，我这个服务才能启动成功）的情况时，可以使用github上一个叫【[dockerize](https://github.com/jwilder/dockerize)】的软件来实现，具体实现看代码中Dockerfile的配置，不做过多描述。
 
 ## 使用 Jenkins实现持续交付
 
