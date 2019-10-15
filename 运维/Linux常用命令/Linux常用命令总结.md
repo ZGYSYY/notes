@@ -644,3 +644,20 @@ deb-src http://archive.ubuntu.com/ubuntu/ trusty-backports main restricted unive
 ![img](Linux%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4%E6%80%BB%E7%BB%93.assets/051620001422176.png)
 
 ![img](Linux%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4%E6%80%BB%E7%BB%93.assets/051620372528304.png)
+
+# vim编辑器缩进设置
+
+在 /etc/vimrc文件中追加如下内容
+
+```bash
+" vim 缩进设置
+set ts=4
+set expandtab
+set autoindent
+```
+
+ts：表示缩进空格数。
+
+expandtab：表示按退格键时，按一次删除一个空格。
+
+autoindent：表示开启自动缩进。

@@ -534,8 +534,6 @@ sudo docker run --detach \
 
 # 部署CI/CD
 
-
-
 ## 持续集成的基本概念
 
 持续集成指的是，频繁的（一天多次）将代码集成到主干。它的好处有两个：
@@ -912,11 +910,133 @@ docker run -d --name my-gitlab-runner --restart always \
 
 ## 使用 Jenkins实现持续交付
 
-## 什么是Jenkins
+### 什么是Jenkins
 
 Jenkins是一个开源软件项目，是基于Java开发的一种持续集成工具，用于监控持续重复的工作，旨在提供一个开放易用的软件平台，使软件的持续集成变成可能。
 
 官方网站： https://jenkins.io/zh/
+
+### 基于Docker安装Jenkins
+
+创建Jenkins目录
+
+```bash
+cd /usr/local
+mkdir docker
+cd docker
+mkdir jenkins
+```
+
+进入 jenkins 目录,创建 docker-compose.yml 文件，保存并退出 vim ，内容如下：
+
+```yml
+version: '3.6'
+services:
+	jenkins:
+		restart: always
+		image: jenkins/jenkins:lts
+		container_name: jenkins
+		ports:
+			# 发布端口
+			- 8080:8080
+			# 基于 JNLP 的 Jenkins 代理通过 TCP 端口 50000 与 Jenkins Master 进行通信
+			- 50000:50000
+		environment:
+			TZ: Asia/Shanghai
+		volumes:
+			- ./data:/var/jenkins_home
+```
+
+创建并启动容器
+
+```bash
+docker-compose up -d
+```
+
+查看容器是否启动成功
+
+```bash
+docker ps
+```
+
+如果有容器名为 jenkins 的容器，表示启动成功。
+
+> **ps**：查看 jenkins 容器的日志发现如下情况
+>
+> ![1571107849310](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571107849310.png)
+>
+> 说明 Jenkins 用户没有数据卷目录 /usr/local/docker/jenkins/data 的权限，需要执行下面的命令来解决问题
+>
+> ```bash
+> # 1000是Jenkins的默认用户id
+> chown -R 1000 /usr/local/docker/jenkins/data
+> # 关闭容器
+> docker-compose down
+> # 创建并启动容器
+> docker-compose up -d
+> ```
+
+访问Jenkins， [http://192.168.1.173:8080](http://192.168.1.173:8080/)，得到如下图
+
+![1571108514453](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571108514453.png)
+
+查看 Jenkins 日志，获取到初始密码，然后填入 Jenkins 页面的输入框中，点击继续按钮
+
+![1571108637701](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571108637701.png)
+
+![1571108773750](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571108773750.png)
+
+![1571108884490](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571108884490.png)
+
+安装如下几个必须的插件
+
+![1571108975665](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571108975665.png)
+
+![1571109014668](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571109014668.png)
+
+点击安装按钮，开始安装，等待插件的安装，如果有些插件安装失败，就点击 重新安装 多装几次。如果有些插件始终无法安装就跳过。
+
+![1571112101164](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571112101164.png)
+
+> **ps**：Jenkins安装插件慢的解决办法如下：
+>
+> 首先启动Jenkins服务，Jenkins会创建一个 data 目录，进入目录中中，找到  hudson.model.UpdateCenter.xml 配置文件，打开该配置文件，将里面插件源地址修改为国内的插件源地址，比如： http://mirrors.tuna.tsinghua.edu.cn/jenkins/updates/update-center.json，然后重启 Jenkins 服务，安装默认的插件，注意该步骤在第一次启动 Jenkins 服务创建了 data 目录后做，因为这个时候默认的插件还没有安装，我这里选择在输入初始密码的时候做该步骤。
+>
+> 主机 Jenkins 镜像选取，官方那个已经自己提出不在维护，所以要使用  jenkins/jenkins:lts  镜像，之前没有注意看文档，被坑了很久。
+
+创建用户名和密码
+
+![1571110136395](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571110136395.png)
+
+![1571110172901](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571110172901.png)
+
+Jenkins 中文配置需要下载的插件 Locale plugin、Localization: Chinese (Simplified)、Localization Support Plugin 如果联网无法下载，需要离线安装。找到设置，配置如下
+
+![1571130779318](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571130779318.png)
+
+### 配置Jenkins
+
+#### 安装 JDK 和 Maven
+
+将下载好的 apache-maven-3.6.2-bin.tar.gz 和 jdk-8u221-linux-x64.tar.gz 软件包，上传到 Jenkins 挂载的 /usr/local/docker/jenkins/data 目录下，并解压，解压成功后删除两个软件包。
+
+#### 配置 JDK 和 Maven
+
+配置 JDK，步骤如下图
+
+![1571132174797](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571132174797.png)
+
+![1571132216370](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571132216370.png)
+
+![1571132542958](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571132542958.png)
+
+![1571132936771](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571132936771.png)
+
+#### 安装动态参数插件
+
+在插件管理中安装 Extended Choice Parameter 插件，如果安装失败请离线安装。
+
+安装完后重启 Jenkins 服务。
 
 # API网关
 
