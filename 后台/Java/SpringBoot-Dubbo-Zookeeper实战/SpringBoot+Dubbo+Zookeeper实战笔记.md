@@ -1038,13 +1038,171 @@ Jenkins 中文配置需要下载的插件 Locale plugin、Localization: Chinese 
 
 安装完后重启 Jenkins 服务。
 
+### 持续交付-创建第一个任务
+
+Jenkins 的持续交付流程与 gitlab-runner 的持续集成差不多，但 gitlab-runner 已经是默认配置好勒 git，所以 Jenkins 需要额外配置一个 gitlab 的 SSH 登录。按照之前 gitlab-runner 的持续集成流程，Jenkins 的持续交付流程大致如下（其实原理还是挺简单的，但对于刚刚接触 Jenkins 的人来说，理解起来可能还是有一点难度的）：
+
+- 拉取代码
+- 打包构建
+- 上传镜像
+- 运行容器
+- 维护清理
+
+**配置 Jenkins 的 gitLab SSH 免密登录**
+
+进入 Jenkins 容器内部
+
+```bash
+docker exec -it 容器id /bin/bash
+```
+
+生成 SSH KEY
+
+```bash
+ssh-keygen -t rsa -C "邮箱地址"
+```
+
+查看公钥
+
+```bash
+cat /var/jenkins_home/.ssh/id_rsa.pub
+```
+
+复制公钥到 gitLab， 设置 SSH 密钥
+
+进入 gitLab 的设置页面
+
+![1571192174648](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571192174648.png)
+
+![1571192253812](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571192253812.png)
+
+回到家目录
+
+```bash
+cd ~
+```
+
+随便克隆一个项目
+
+```bash
+# 注意这里的ssh前缀，新版的 gitlab 默认不会添加前缀，导致克隆项目总是叫输入密码，没有权限，坑的一批
+git clone ssh://git@192.168.1.170:522/my-shop/my-shop-dependencies.git
+```
+
+![1571196223479](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571196223479.png)
+
+进入到 /var/jenkins_home/.ssh/ 目录查看是否有一个 known_hosts 的文件，如果有，SSH 就配置成功。
+
+删除刚才克隆的 my-shop-dependencies 项目。
+
+**配置 Publish over SSH**
+
+进入 Jenkins 系统配置中，找到如下配置项
+
+![1571196504530](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571196504530.png)
+
+![1571196874189](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571196874189.png)
+
+![1571197277508](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571197277508.png)
+
+![1571197334202](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571197334202.png)
+
+最后点击保存。
+
+访问 gitLab，给 my-shop-dependencies 项目新建标签（也可以是其它项目）
+
+![1571197500152](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571197500152.png)
+
+点击保存按钮。
+
+**创建 Maven Project**
+
+在 Jenkins 中创建一个基于 Maven 的任务
+
+![1571197656750](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571197656750.png)
+
+![1571199198370](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571199198370.png)
+
+> **注意**：如果没有上面图中2这个选项，是因为没有对应的插件，需要安装  Maven Integration Plugin  插件，然后重启 Jenkins 服务后就有了。
+
+![1571199494118](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571199494118.png)
+
+![1571207953683](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571207953683.png)
+
+点击保存，然后点击 立即构建。
+
+![1571208058022](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571208058022.png)
+
+接着就等待构建成功吧。
+
+构建成功后，交互式进入 Jenkins 容器，进入到家目录中的 workspace 目录下，可以看到从 gitLab 上拉取下来的项目代码。
+
+![1571208350336](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571208350336.png)
+
+Jenkins 自动将我们的项目代码安装到了本地仓库，在当前家目录下的 .m2 目录中可以看到。
+
+![1571208510014](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571208510014.png)
+
+上面步骤完成后，再次访问 Jenkins，并对刚才创建的 Maven Object 进行配置
+
+![1571208633933](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571208633933.png)
+
+![1571208800335](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571208800335.png)
+
+![1571209262470](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571209262470.png)
+
+ Groovy Script 内容如下：
+
+```
+def ver_keys = ['bash','-c','cd /var/jenkins_home/workspace/my-shop-dependencies; git pull>/dev/null; git remote prune origin>/dev/null; git tag -l |sort -r |head -10']
+ver_keys.execute().text.tokenize('\n')
+```
+
+![1571209367623](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571209367623.png)
+
+![1571209581005](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571209581005.png)
+
+上面图中内容如下：
+
+```
+echo $RELEASE_VERSION
+cd /var/jenkins_home/workspace/my-shop-dependencies
+git checkout $RELEASE_VERSION
+git pull origin  $RELEASE_VERSION
+mvn clean install
+```
+
+最后点击保存。
+
+![1571209667683](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571209667683.png)
+
+![1571209739039](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571209739039.png)
+
+![1571209748657](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571209748657.png)
+
+![1571209802143](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571209802143.png)
+
+![1571209837381](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571209837381.png)
+
+![1571213354951](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571213354951.png)
+
+**实现自动部署功能**
+
+![1571215606918](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571215606918.png)
+
+找到  Post Steps 配置项，操作如下
+
+![1571215720190](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571215720190.png)
+
+![1571215949178](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1571215949178.png)
+
+保存配置，开始重新构建。
+
+查看目标服务器上的服务是否部署成功。
+
 # API网关
 
-
-
 # 分布式文件系统FastDFS
-
-
 
 ## 什么是FastDFS
 
@@ -1071,42 +1229,22 @@ FastDFS为互联网量身定制，充分考虑冗余备份、负载均衡、线�
 
 因为FastDFS服务端的跟踪器可以部署多台，但是FastDFS的HTTP服务较为简单，无法提供负载均衡等高性能服务，所以需要使用Nginx来做负载均衡弥补上述的缺陷。
 
-
-
 ## Docker中安装FastDFS
-
-
 
 ## 使用FastDFS的Java客户端
 
-
-
 ## Docker中安装Nginx
-
-
 
 ## 使用Nginx解决跨域问题
 
-
-
 # Solr全文检索
-
-
 
 ## 什么是Solr
 
-
-
 ## Docker安装Solr
-
-
 
 ## Solr中使用分词器——IKAnalyzer
 
-
-
 ## Solr的基本操作
-
-
 
 ## SpringBoot整合Solr
