@@ -932,19 +932,19 @@ mkdir jenkins
 ```yml
 version: '3.6'
 services:
-  jenkins:
-    restart: always
-	image: jenkins/jenkins:lts
-	container_name: jenkins
-	ports:
-		# 发布端口
-		- 8080:8080
-		# 基于 JNLP 的 Jenkins 代理通过 TCP 端口 50000 与 Jenkins Master 进行通信
-		- 50000:50000
-	environment:
-		TZ: Asia/Shanghai
-	volumes:
-		- ./data:/var/jenkins_home
+	jenkins:
+		restart: always
+		image: jenkins
+		container_name: jenkins
+		ports:
+			# 发布端口
+			- 8080:8080
+			# 基于 JNLP 的 Jenkins 代理通过 TCP 端口 50000 与 Jenkins Master 进行通信
+			- 50000:50000
+		environment:
+			TZ: Asia/Shanghai
+		volumes:
+			- ./data:/var/jenkins_home
 ```
 
 创建并启动容器
