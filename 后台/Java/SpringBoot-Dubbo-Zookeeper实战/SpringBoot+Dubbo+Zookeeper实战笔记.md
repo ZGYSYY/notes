@@ -879,7 +879,7 @@ mkdir jenkins
 
 进入 jenkins 目录,创建 docker-compose.yml 文件，保存并退出 vim ，内容如下：
 
-```yml
+```
 version: '3.6'
 services:
 	jenkins:
