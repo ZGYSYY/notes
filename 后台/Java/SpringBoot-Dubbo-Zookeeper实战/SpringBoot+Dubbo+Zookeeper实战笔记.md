@@ -5,15 +5,11 @@ Spring Boot + Spring Cloud：组件多，功能完备。
 
 Spring Boot + Dubbo + Zookeeper：组件少，功能不太完备。
 
-
-
 # 什么是高可用
 
 - 一直可以使用
 - 能支持高并发
 - 具有高性能
-
-
 
 # 四大问题
 
@@ -49,13 +45,9 @@ Spring Boot + Dubbo + Zookeeper：组件少，功能不太完备。
 
 PS：其实最大问题就是网络不可靠。
 
-
-
 # 什么是Zookeeper
 
 Zookeeper是一种**分布式协调服务**，用于管理大型主机。在分布式环境中协调和管理服务是一个复杂的过程。Zookeeper通过其简单的架构和API解决了这个问题。Zookeeper允许开发人员专注于核心应用程序逻辑，而不必担心应用程序的分布式特性。
-
-
 
 # 分布式锁应具备条件
 
@@ -66,16 +58,12 @@ Zookeeper是一种**分布式协调服务**，用于管理大型主机。在分�
 - 具备锁失效机制，防止出现死锁
 - 具备非阻塞特性，即没有获取到锁立即返回获取锁失败。
 
-
-
 # 分布式锁实现
 
 - Zookeeper
 - Memcache
 - Redis
 - Chubby
-
-
 
 ## 通过Redis来实现分布式锁
 
@@ -85,14 +73,10 @@ Zookeeper是一种**分布式协调服务**，用于管理大型主机。在分�
 2. 释放锁：使用`del`命令删除对应的数据。
 3. 锁超时：为了防止某些特殊情况下，锁没有得到释放，因此需要实现一个在规定时间内，如果锁没有被释放，将自动调用`del`命令来释放锁。
 
-
-
 # Zookeeper两大功能
 
 1. 分布式锁。
 2. 服务注册与发现。
-
-
 
 # Zookeeper的数据模型
 
@@ -111,8 +95,6 @@ Znede中包含的元素如下
 
 需要注意一点，Zookeeper是为读多写少的场景所设计。Znode并不是用来存储大规模业务数据的地方，而是用于存储少量的状态和配置信息的地方，所以规定**每个节点的数据大小不能超过1MB**。
 
-
-
 # Zookeeper的基本操作
 
 - 创建节点：create
@@ -124,13 +106,9 @@ Znede中包含的元素如下
 
 在上面的这些操作中，`getData`、`exists`、`getChildren`属于读操作，Zookeeper客户端在进行读操作的时候，可以选择是否设置`watch`选项，通过Zookeeper的**事件通知机制**，在服务端中，当被Zookeeper客户端watch的节点被修改（删除、修改）时，Zookeeper服务端会异步通知Zookeeper客户端当前数据被修改了。
 
-
-
 # Zookeeper的事件通知机制
 
 当用户访问某个服务的时候，会在Gateway（网关）中根据请求路径（如：user/info）来确定用户需要访问哪个服务，并确定该服务所对应的服务器IP地址，如果在网关中没有找到所访问路径的服务器IP地址，在Gateway中就会向Zookeeper服务器中发送getData(路径,whach)命令，在Zookeeper服务器获取对应路径的IP地址，并将查询的IP地址在Gateway（网关）中保存一份，这样就可以在下次请求该路径时，就不会再访问Zookeeper服务器。因为Gateway在向向Zookeeper服务器中发送getData命令的时候添加了`whach`选项，当我们的某个服务器宕机的时候，Zookeeper服务器就会异步通知Gateway，告诉Gateway哪台机器宕机了，这时Gateway就会在自己内部保存的IP地址中将那台宕机的IP地址删除掉。
-
-
 
 # Zookeeper集群
 
@@ -142,13 +120,9 @@ Zookeeper集群是一个一主多从结构。在更新数据时，首先会更�
 
 [参考：ZAB协议详解](https://dbaplus.cn/news-141-1875-1.html)
 
-
-
-## Docker-compose安装
+## Dcker-compose安装
 
 [参考：Docker-compose](https://docs.docker.com/compose/install/)
-
-
 
 # Docker中安装Zookeeper集群
 
@@ -265,8 +239,6 @@ delete /test
 
 > [什么是Zookeeper？](../什么是ZooKeeper/什么是ZooKeeper.md)
 
-
-
 # Dubbo
 
 Apache Dubbo是一款高性能、轻量级的开源Java RPC分布式服务框架，它提供了三大核心能力：
@@ -278,8 +250,6 @@ Apache Dubbo是一款高性能、轻量级的开源Java RPC分布式服务框架
 [Dubbo官方网站](http://dubbo.apache.org/zh-cn/docs/user/references/protocol/dubbo.html)
 
 [Dubbo github](https://github.com/apache/dubbo)
-
-
 
 ## Dubbo五大角色
 
@@ -298,13 +268,9 @@ Apache Dubbo是一款高性能、轻量级的开源Java RPC分布式服务框架
 - 服务消费者`Consumer`从提供者地址列表中，基于软负载均衡算法，选一台提供者进行调用，如果调用失败，再选另一台调用。
 - 服务消费者`Consumer`和提供者`Provider`，在内存中累计调用次数和调用时间，定时每分钟发送一次统计数据到监控中心`Monitor`。
 
-
-
 ## Dubbo管理控制台
 
 [Dubbo管理控制台安装教程](https://github.com/apache/dubbo-admin)
-
-
 
 ## Dubbo负载均衡
 
@@ -318,8 +284,6 @@ Apache Dubbo是一款高性能、轻量级的开源Java RPC分布式服务框架
 # consistenthash：一致性Hash
 dubbo.provider.loadbalance=roundrobin
 ```
-
-
 
 ## Kryo高速序列化
 
@@ -396,8 +360,6 @@ double[]
 
 由于注册被序列化的类仅仅是出于性能优化的目的，所以即使你忘记了注册某些类也没有关系。事实上，即使不注册任何类，Kryo和FST的性能依然普遍优于hessian和dubbo序列化。
 
-
-
 ## Hystrix熔断器和仪表盘
 
 ### 熔断器简介
@@ -413,8 +375,6 @@ double[]
 ![1570593185010](SpringBoot+Dubbo+Zookeeper%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0.assets/1570593185010.png)
 
 熔断器打开后，为了避免连锁故障，通过`fallback`方法可以直接返回一个固定值。
-
-
 
 ### 使用熔断器
 
@@ -458,8 +418,6 @@ public class UserServiceImpl implements UserService {
 }
 ```
 
-
-
 ### 使用Hystrix-dashboard熔断器仪表盘
 
 1. 在pom.xml中引入如下依赖：
@@ -498,8 +456,6 @@ public class HystrixDashboardConfiguration {
 
 4. 最后访问测试
 
-
-
 # Docker安装Nexus3
 
 [docker安装Nexus3教程](https://hub.docker.com/r/sonatype/nexus3)
@@ -509,8 +465,6 @@ docker快速运行命令如下
 ```bash
 docker run -d -p 8081:8081 --name nexus -v /usr/local/docker/nexus-data:/nexus-data --restart=always sonatype/nexus3
 ```
-
-
 
 # Docker安装Gitlab
 
@@ -529,8 +483,6 @@ sudo docker run --detach \
   --volume /usr/local/docker/gitlab/data:/var/opt/gitlab \
   gitlab/gitlab-ce:latest
 ```
-
-
 
 # 部署CI/CD
 
@@ -898,15 +850,13 @@ docker run -d --name my-gitlab-runner --restart always \
 
 让需要互相通信的容器，使用同一块docker虚拟网卡即可。
 
-> **ps**：创建docker虚拟网卡的命令为：docker network create 网卡名
+> **ps**1：创建docker虚拟网卡的命令为：docker network create 网卡名
 >
 > 查看docker虚拟网卡的命令为：docker network ls
 >
 > 删除无用docker虚拟网卡命令为：docker network prune，不询问删除可以加一个`-f`。
 
-
-
-> **ps**：容器内的服务是能够访问访问同宿主机同一局域网的ip的，如果不能访问，应该是iptables问题，建议重启服务。
+> **ps**2：容器内的服务是能够访问访问同宿主机同一局域网的ip的，如果不能访问，应该是iptables问题，建议重启服务。
 
 ## 使用 Jenkins实现持续交付
 
