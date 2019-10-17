@@ -882,19 +882,19 @@ mkdir jenkins
 ```yaml
 version: '3.6'
 services:
-	jenkins:
-		restart: always
-		image: jenkins
-		container_name: jenkins
-		ports:
-			# 发布端口
-			- 8080:8080
-			# 基于 JNLP 的 Jenkins 代理通过 TCP 端口 50000 与 Jenkins Master 进行通信
-			- 50000:50000
-		environment:
-			TZ: Asia/Shanghai
-		volumes:
-			- ./data:/var/jenkins_home
+  jenkins:
+    restart: always
+    image: jenkins
+    container_name: jenkins
+    ports:
+      # 发布端口
+      - 8080:8080
+      # 基于 JNLP 的 Jenkins 代理通过 TCP 端口 50000 与 Jenkins Master 进行通信
+      - 50000:50000
+    environment:
+      TZ: Asia/Shanghai
+    volumes:
+      - ./data:/var/jenkins_home
 ```
 
 创建并启动容器
@@ -1151,6 +1151,8 @@ mvn clean install
 查看目标服务器上的服务是否部署成功。
 
 # API网关
+
+网关的思路是在访问某个 api 时，不是直接去访问 ip 地址，而是根据某个**前缀**获取到对应服务的 ip 地址，然后再根据 ip 地址访问 api。
 
 # 分布式文件系统FastDFS
 
