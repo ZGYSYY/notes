@@ -1,9 +1,24 @@
 stages:
   - build
+  - run
+  - clean
 
 build:
   stage: build
   script:
-    - echo "Hello Gitlab-runner"
-    - pwd
     - mvn clean package
+    - cp target/my-shop-service-user-provider-1.0.0-SNAPSHOT.jar docker
+    - cd docker
+    - docker build -t my-shop-service-user-provider:v1.0.0 .
+
+run:
+  stage: run
+  script:
+    - cd docker
+    - docker-compose down
+    - docker-compose up -d
+
+clean:
+  stage: clean
+  script:
+    - docker volume prune -f

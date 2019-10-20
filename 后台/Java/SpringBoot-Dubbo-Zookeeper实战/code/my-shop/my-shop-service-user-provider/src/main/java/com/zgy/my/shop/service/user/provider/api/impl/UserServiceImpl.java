@@ -1,11 +1,11 @@
 package com.zgy.my.shop.service.user.provider.api.impl;
 
+import com.alibaba.dubbo.config.annotation.Service;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
 import com.zgy.my.shop.commons.domain.User;
 import com.zgy.my.shop.commons.mapper.UserMapper;
 import com.zgy.my.shop.service.user.api.UserService;
-import org.apache.dubbo.config.annotation.Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 

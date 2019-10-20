@@ -17,7 +17,7 @@ public class User implements Serializable {
     /**
      * 用户Id
      */
-    private Integer id;
+    private Long id;
     /**
      * 用户名称
      */
@@ -30,6 +30,10 @@ public class User implements Serializable {
      * 年龄
      */
     private Integer age;
+    /**
+     * 性别
+     */
+    private Integer sex;
     /**
      * 电话
      */

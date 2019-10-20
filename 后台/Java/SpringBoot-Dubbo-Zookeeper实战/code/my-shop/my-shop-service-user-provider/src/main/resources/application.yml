@@ -3,9 +3,9 @@ spring:
     name: my-shop-service-user-provider
   datasource:
     druid:
-      url: jdbc:mysql://192.168.1.166:3306/my-shop?useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true
+      url: jdbc:mysql://192.168.31.66:3306/my-shop?useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=GMT
       username: root
-      password: root
+      password: 123456
       initial-size: 1
       min-idle: 1
       max-active: 20
@@ -34,13 +34,13 @@ dubbo:
   protocol:
     id: dubbo
     name: dubbo
-    host: 192.168.1.166
+#    host: 192.168.31.66
     port: 20881
     status: server
     serialization: kryo
   registry:
     id: zookeeper
-    address: zookeeper://192.168.1.168:2181?backup=192.168.1.168:2182,192.168.1.168:2183
+    address: zookeeper://192.168.31.104:2181?backup=192.168.31.104:2182,192.168.31.104:2183
 
 #management:
 #  endpoint:

@@ -1,7 +1,6 @@
 package com.zgy.my.shop.commons.dubbo.config;
 
-import org.apache.dubbo.common.serialize.support.SerializationOptimizer;
-
+import com.alibaba.dubbo.common.serialize.support.SerializationOptimizer;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;

@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: my-shop-service-content-consumer
+  thymeleaf:
+    cache: false
+    mode: LEGACYHTML5
+    encoding: utf-8
+    servlet:
+      content-type: text/html
+server:
+  port: 8602
+
+services:
+  versions:
+    content:
+      v1: 1.0.0
+
+dubbo:
+  scan:
+    base-packages: com.zgy.my.shop.service.content.consumer
+  application:
+    id: my-shop-service-content-consumer
+    name: my-shop-service-content-consumer
+  protocol:
+    id: dubbo
+    name: dubbo
+    serialization: kryo
+    status: server
+    port: 30882
+  registry:
+    id: zookeeper
+    address: zookeeper://192.168.31.104:2181?backup=192.168.31.104:2182,192.168.31.104:2183

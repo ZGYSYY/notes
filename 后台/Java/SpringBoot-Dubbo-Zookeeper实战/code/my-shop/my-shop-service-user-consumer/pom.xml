@@ -42,7 +42,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>com.zgy.my.shop.service.user.provider.MyShopServiceUserProviderApplication</mainClass>
+                    <mainClass>com.zgy.my.shop.service.user.consumer.MyShopServiceUserConsumerApplication</mainClass>
                 </configuration>
             </plugin>
         </plugins>

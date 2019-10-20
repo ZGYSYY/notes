@@ -17,15 +17,16 @@ services:
 
 dubbo:
   scan:
-    base-packages: com.zgy.my.shop.service.user.consumer.controller
+    base-packages: com.zgy.my.shop.service.user.consumer
   application:
     id: my-shop-service-user-consumer
     name: my-shop-service-user-consumer
   protocol:
     id: dubbo
     name: dubbo
-    host: 192.168.1.166
     serialization: kryo
+    status: server
+    port: 30881
   registry:
     id: zookeeper
-    address: zookeeper://192.168.1.168:2181?backup=192.168.1.168:2182,192.168.1.168:2183
+    address: zookeeper://192.168.31.104:2181?backup=192.168.31.104:2182,192.168.31.104:2183

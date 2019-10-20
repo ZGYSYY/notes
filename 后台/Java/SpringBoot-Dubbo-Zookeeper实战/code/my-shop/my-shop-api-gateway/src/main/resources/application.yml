@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: my-shop-api-gateway
+  thymeleaf:
+    cache: false
+    mode: LEGACYHTML5
+    encoding: utf-8
+    servlet:
+      content-type: text/html
+server:
+  port: 9000
+
+services:
+  ports:
+    user: 8601
+    content: 8602
+  versions:
+    user:
+      v1: 1.0.0
+    content:
+      v1: 1.0.0
+
+dubbo:
+  scan:
+    base-packages: com.zgy.my.shop.api.gateway
+  application:
+    id: my-shop-api-gateway
+    name: my-shop-api-gateway
+  protocol:
+    id: dubbo
+    name: dubbo
+    serialization: kryo
+  registry:
+    id: zookeeper
+    address: zookeeper://192.168.31.104:2181?backup=192.168.31.104:2182,192.168.31.104:2183

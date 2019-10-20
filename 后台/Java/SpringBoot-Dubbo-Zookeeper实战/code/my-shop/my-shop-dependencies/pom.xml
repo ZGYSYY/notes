@@ -21,7 +21,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <boot-dubbo.version>2.7.3</boot-dubbo.version>
+        <boot-dubbo.version>2.6.5</boot-dubbo.version>
         <boot-mapper.version>2.1.5</boot-mapper.version>
         <boot-pagehelper.version>1.2.12</boot-pagehelper.version>
         <boot-druid.version>1.1.17</boot-druid.version>
@@ -38,8 +38,13 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>org.apache.dubbo</groupId>
+                <groupId>com.alibaba.boot</groupId>
                 <artifactId>dubbo-spring-boot-starter</artifactId>
+                <version>0.2.1.RELEASE</version>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba</groupId>
+                <artifactId>dubbo</artifactId>
                 <version>${boot-dubbo.version}</version>
             </dependency>
             <dependency>
@@ -57,6 +62,11 @@
                 <groupId>com.github.pagehelper</groupId>
                 <artifactId>pagehelper-spring-boot-starter</artifactId>
                 <version>${boot-pagehelper.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.pagehelper</groupId>
+                <artifactId>pagehelper</artifactId>
+                <version>5.1.10</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
@@ -83,11 +93,11 @@
     </dependencyManagement>
 
     <!--私服配置-->
-    <repositories>
+    <!--<repositories>
         <repository>
-            <id>nexus3</id>
-            <name>maven-public</name>
-            <url>http://192.168.1.169:8081/repository/maven-public/</url>
+            <id>private-nexus</id>
+            <name>private-nexus</name>
+            <url>http://192.168.31.101:8081/repository/maven-public/</url>
             <releases>
                 <enabled>true</enabled>
                 <updatePolicy>always</updatePolicy>
@@ -97,19 +107,19 @@
                 <updatePolicy>always</updatePolicy>
             </snapshots>
         </repository>
-    </repositories>
+    </repositories>-->
 
     <!--发布配置-->
     <distributionManagement>
         <repository>
-            <id>nexus3</id>
-            <name>maven-releases</name>
-            <url>http://192.168.1.169:8081/repository/maven-releases/</url>
+            <id>private-nexus</id>
+            <name>private-nexus</name>
+            <url>http://192.168.31.101:8081/repository/maven-releases/</url>
         </repository>
         <snapshotRepository>
-            <id>nexus3</id>
-            <name>maven-snapshots</name>
-            <url>http://192.168.1.169:8081/repository/maven-snapshots/</url>
+            <id>private-nexus</id>
+            <name>private-nexus</name>
+            <url>http://192.168.31.101:8081/repository/maven-snapshots/</url>
         </snapshotRepository>
     </distributionManagement>
 </project>

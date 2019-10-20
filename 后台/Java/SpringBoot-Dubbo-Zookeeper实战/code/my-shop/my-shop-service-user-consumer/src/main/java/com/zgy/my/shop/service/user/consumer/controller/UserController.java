@@ -1,8 +1,8 @@
 package com.zgy.my.shop.service.user.consumer.controller;
 
+import com.alibaba.dubbo.config.annotation.Reference;
 import com.zgy.my.shop.commons.domain.User;
 import com.zgy.my.shop.service.user.api.UserService;
-import org.apache.dubbo.config.annotation.Reference;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;

@@ -1,6 +1,5 @@
 package com.zgy.my.shop.service.user.provider;
 
-import org.apache.dubbo.container.Main;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.netflix.hystrix.EnableHystrix;
@@ -21,6 +20,5 @@ import tk.mybatis.spring.annotation.MapperScan;
 public class MyShopServiceUserProviderApplication {
     public static void main(String[] args) {
         SpringApplication.run(MyShopServiceUserProviderApplication.class, args);
-        Main.main(args);
     }
 }
