@@ -1154,6 +1154,18 @@ mvn clean install
 
 网关的思路是在访问某个 api 时，不是直接去访问 ip 地址，而是根据某个**前缀**获取到对应服务的 ip 地址，然后再根据 ip 地址访问 api。
 
+具体实现如下：
+
+1. 将服务消费者转变成既是服务提供者（用于网关调用该接口），也是服务消费者（用于调用其他服务提供者）。
+
+2. 新建项目中，将网关变成一个服务消费者，在 Controller 中去调用步骤 1 中服务提供者提供的接口服务，当去调用步骤 1 中的服务提供者接口时，相当于网关项目发送了一个 RPC 请求，在 Dubbo 中，可以使用Dubbo提供的**上下文信息（RpcContext）**来获取最后一次调用的提供方 IP 地址 ，然后重定向到对应的提供方 ip 地址即可。
+
+详细实现可以看代码中的 my-shop-api-gateway 项目。
+
+> 注意：RpcContext.getContext().isConsumerSide() 或者其它方法的调用如果在 Dubbo2.7.x 后将会报空指针异常，因为 Dubbo2.7.x 在调用远程接口（RPC请求）后把 RpcContext 中的内容清空了，这是一个巨坑，我在这里研究了好久，最后解决办法是降低 Dubbo 版本到 2.6.x 就没有问题。
+>
+> github已有人反馈这个问题，地址为：https://github.com/apache/dubbo/issues/4390
+
 # 分布式文件系统FastDFS
 
 ## 什么是FastDFS
