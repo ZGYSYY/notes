@@ -1195,6 +1195,22 @@ FastDFS为互联网量身定制，充分考虑冗余备份、负载均衡、线�
 
 ## Docker中安装FastDFS
 
+FastDFS github 地址： https://github.com/happyfish100/fastdfs
+
+FastDFS github 安装教程： https://github.com/happyfish100/fastdfs/wiki 
+
+**以下安装方式是基于 Docker 安装 FastDFS 的教程**
+
+**环境准备**
+
+libfastcommon.tar.gz
+
+fastdfs-5.11.tar.gz
+
+nginx-1.13.6.tar.gz
+
+fastdfs-nginx-module.v1.16.tar.gz
+
 ## 使用FastDFS的Java客户端
 
 ## Docker中安装Nginx
