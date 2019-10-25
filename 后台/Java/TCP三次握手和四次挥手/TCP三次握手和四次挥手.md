@@ -34,10 +34,10 @@
 
 我们看到有两个中间状态，syn_sent 和 syn_rcvd，**这两个状态叫做 【半打开】 状态** ，就是向对方招手了，但是还没来得及看到对方的点头微笑。
 
-syn_sent 是主动打开方的**【半打开】**状态，syn_rcvd 是被动打开方的 **【半打开】** 状态。客户端是主动打开方，服务器是被动打开方。
+syn_sent 是主动打开方的 **【半打开】** 状态，syn_rcvd 是被动打开方的 **【半打开】** 状态。客户端是主动打开方，服务器是被动打开方。
 
-- **syn_sent:** syn package has been sent
-- **syn_rcvd:** syn package has been received
+- **syn_sent：** syn package has been sent
+- **syn_rcvd：** syn package has been received
 
 #  TCP 数据传输
 
