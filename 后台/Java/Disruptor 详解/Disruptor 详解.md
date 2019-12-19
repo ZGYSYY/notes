@@ -1,4 +1,4 @@
-<h1><strong>Disruptor 详解</strong></h1>
+<center><h1>Disruptor 详解</h1></center>
 
 # 资料一
 
