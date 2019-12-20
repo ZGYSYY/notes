@@ -285,7 +285,9 @@ if (opStatus == null) {
 
 这里只是简单的一个redisson分布式锁的测试用例，并分析了执行lua脚本这部分，如果要继续分析执行结束之后的操作，需要进行netty源码分析 ，redisson使用了netty完成异步和同步的处理。
 
-# # 资料二（Redlock：Redis分布式锁最牛逼的实现）
+
+
+# 资料二（Redlock：Redis分布式锁最牛逼的实现）
 
 **普通实现**
 
@@ -453,6 +455,8 @@ protected RFuture<Boolean> unlockInnerAsync(long threadId) {
 
 }
 ```
+
+
 
 # 资料三（Redisson实现Redis分布式锁的N种姿势）
 
