@@ -192,7 +192,7 @@ SessionTracker 有一个工作就是，将超时的会话清除掉。于是“�
 
 也就是说，如果没有到达 SessionTracker 的检查时间周期，即使有会话过期，SessionTracker 也不会去清除。由此，就引入会话超时计算公式，也就是 TickTime 的计算公式。
 
-__TickTime=（（当前时间+会话过期时间）/检查时间间隔+1）*检查时间间隔。__
+__TickTime=（（当前时间+会话过期时间）/检查时间间隔+1）* 检查时间间隔。__
 
 将这个值计算出来以后，SessionTracker 会把对应的会话按照这个时间放在对应的时间轴上面。SessionTracker 在对应的 TickTime 检查会话是否过期。
 
