@@ -1,6 +1,4 @@
-
-<center><h1>Java 中使用 Zookeeper 客户端 Curator 详解</h1></center>
-
+<center><h1>Java 中使用 Zookeeper 客户端 Curator 详解</h1></center><hr/>
 
 # 简介
 
@@ -279,4 +277,3 @@ public void test5() throws Exception {
 ```
 
 <b>注意：</b>如果#inBackground()方法不指定executor，那么会默认使用Curator的EventThread去进行异步处理。
-
