@@ -196,3 +196,63 @@ public void test4() throws Exception {
 }
 ```
 
+## 异步接口
+
+上面提到的创建、删除、更新、读取等方法都是同步的，Curator提供异步接口，引入了BackgroundCallback接口用于处理异步接口调用之后服务端返回的结果信息。BackgroundCallback接口中一个重要的回调值为CuratorEvent，里面包含事件类型、响应吗和节点的详细信息。
+
+**CuratorEventType**
+
+| 事件类型 | 对应CuratorFramework实例的方法 |
+| :------: | :----------------------------: |
+|  CREATE  |           #create()            |
+|  DELETE  |           #delete()            |
+|  EXISTS  |         #checkExists()         |
+| GET_DATA |           #getData()           |
+| SET_DATA |           #setData()           |
+| CHILDREN |         #getChildren()         |
+|   SYNC   |      #sync(String,Object)      |
+| GET_ACL  |           #getACL()            |
+| SET_ACL  |           #setACL()            |
+| WATCHED  |       #Watcher(Watcher)        |
+| CLOSING  |            #close()            |
+
+**响应码(#getResultCode())**
+
+| 响应码 |                   意义                   |
+| :----: | :--------------------------------------: |
+|   0    |              OK，即调用成功              |
+|   -4   | ConnectionLoss，即客户端与服务端断开连接 |
+|  -110  |        NodeExists，即节点已经存在        |
+|  -112  |        SessionExpired，即会话过期        |
+
+一个异步创建节点的例子如下（然而并没有调用回调方法，原因不知道，也没有报错）：
+
+```java
+/**
+ * 异步操作
+ * @throws Exception
+ */
+@Test
+public void test5() throws Exception {
+    RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
+    CuratorFramework client = CuratorFrameworkFactory.builder()
+        .connectString("127.0.0.1:2181")
+        .sessionTimeoutMs(5000)
+        .connectionTimeoutMs(5000)
+        .retryPolicy(retryPolicy)
+        .namespace("study")
+        .build();
+    client.start();
+
+    Executor executor = Executors.newFixedThreadPool(2);
+    client.create().creatingParentContainersIfNeeded().withMode(CreateMode.EPHEMERAL).inBackground(new BackgroundCallback() {
+        @Override
+        public void processResult(CuratorFramework client, CuratorEvent event) throws Exception {
+            LOGGER.info("开始调用回调方法，WatchedEvent: [{}], ResultCode: [{}]", event.getType(), event.getResultCode());
+        }
+    }, executor).forPath("/name");
+}
+```
+
+__注意：__如果#inBackground()方法不指定executor，那么会默认使用Curator的EventThread去进行异步处理。
+
