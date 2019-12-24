@@ -256,4 +256,5 @@ public void test5() throws Exception {
 }
 ```
 
-**注意： **如果#inBackground()方法不指定executor，那么会默认使用Curator的EventThread去进行异步处理。
+**注意<![CDATA[：]]>**如果#inBackground()方法不指定executor，那么会默认使用Curator的EventThread去进行异步处理。
+
