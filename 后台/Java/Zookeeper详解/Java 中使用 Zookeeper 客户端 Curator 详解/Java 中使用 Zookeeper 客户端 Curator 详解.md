@@ -1,4 +1,4 @@
-<center><h1>Java 中使用 Zookeeper 客户端 Curator 详解</h1></center><hr/>
+<center><h1>Java 中使用 Zookeeper 客户端 Curator 详解</h1></center><br/>
 
 # 简介
 
