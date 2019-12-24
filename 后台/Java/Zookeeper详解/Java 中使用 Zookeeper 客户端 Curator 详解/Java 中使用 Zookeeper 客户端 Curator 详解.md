@@ -227,9 +227,28 @@ public void test4() throws Exception {
 |  -110  |        NodeExists，即节点已经存在        |
 |  -112  |        SessionExpired，即会话过期        |
 
-一个异步创建节点的例子如下（然而并没有调用回调方法，原因不知道，也没有报错）：
+一个异步创建节点的例子如下：
 
 ```java
+private static final Logger LOGGER = LoggerFactory.getLogger(Test04App.class);
+
+@Before
+public void before() throws Exception {
+    RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
+    CuratorFramework client = CuratorFrameworkFactory.builder().connectString("127.0.0.1:2181")
+        .sessionTimeoutMs(5000)
+        .connectionTimeoutMs(5000)
+        .retryPolicy(retryPolicy)
+        .build();
+    client.start();
+    // 删除一个节点，并且递归删除其所有的子节点
+    Stat stat = client.checkExists().forPath("/study");
+    if (stat != null) {
+        client.delete().deletingChildrenIfNeeded().forPath("/study");
+    }
+    LOGGER.info("清除上一次测试的数据成功！");
+}
+
 /**
  * 异步操作
  * @throws Exception
@@ -253,6 +272,9 @@ public void test5() throws Exception {
             LOGGER.info("开始调用回调方法，WatchedEvent: [{}], ResultCode: [{}]", event.getType(), event.getResultCode());
         }
     }, executor).forPath("/name");
+
+    // 不让程序结束，否则看不到回调方法的调用
+    for (;;);
 }
 ```
 
