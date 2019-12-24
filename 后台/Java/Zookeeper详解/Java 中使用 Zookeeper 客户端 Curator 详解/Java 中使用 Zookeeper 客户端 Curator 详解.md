@@ -1,7 +1,5 @@
+
 <center><h1>Java 中使用 Zookeeper 客户端 Curator 详解</h1></center>
-
-
-
 # 简介
 
 因为最近项目需要使用Zookeeper这个中间件，提前了解一下它的客户端Curator的使用。
@@ -35,18 +33,18 @@ Maven依赖（注意zookeeper版本  这里对应的是3.4.6）
 @Test
 public void test() {
     /*
-        创建重试策略对象，参数含义如下：
-        - baseSleepTimeMs: 基本睡眠时间。
-        - maxRetries：最大重试次数。
-         */
+    创建重试策略对象，参数含义如下：
+    - baseSleepTimeMs: 基本睡眠时间。
+    - maxRetries：最大重试次数。
+    */
     RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
     /*
-        创建客户端对象，参数含义如下：
-        - connectString：服务器列表，格式为 `host1:port,host2:port,...`。
-        - sessionTimeoutMs：会话超时时间， 默认 60000 ms。
-        - connectionTimeoutMs：连接超时时间，默认 60000 ms。
-        - retryPolicy：重试策略
-         */
+    创建客户端对象，参数含义如下：
+    - connectString：服务器列表，格式为 `host1:port,host2:port,...`。
+    - sessionTimeoutMs：会话超时时间， 默认 60000 ms。
+    - connectionTimeoutMs：连接超时时间，默认 60000 ms。
+    - retryPolicy：重试策略
+    */
     CuratorFramework client = CuratorFrameworkFactory.newClient("127.0.0.1:2181", 5000, 5000, retryPolicy);
     // 连接 zookeeper 服务器
     client.start();
@@ -84,7 +82,7 @@ RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
 				.build();
 ```
 
-## 数据节点操作
+## 数据节点基本操作（增删改查）
 
 **Zookeeper的节点创建模式：**
 
@@ -172,3 +170,29 @@ public void test3() throws Exception {
     LOGGER.info("检查节点是否存在, stat: [{}]", stat);
 }
 ```
+
+## 事务
+
+CuratorFramework的实例包含inTransaction( )接口方法，调用此方法开启一个ZooKeeper事务. 可以复合create, setData, check, and/or delete 等操作然后调用commit()作为一个原子操作提交。一个例子如下：
+
+```java
+@Test
+public void test4() throws Exception {
+    RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
+    CuratorFramework client = CuratorFrameworkFactory.builder()
+        .connectString("127.0.0.1:2181")
+        .sessionTimeoutMs(5000)
+        .connectionTimeoutMs(5000)
+        .retryPolicy(retryPolicy)
+        .namespace("study")
+        .build();
+    client.start();
+
+    // 事务操作，保证原子性
+    client.inTransaction()
+        .create().withMode(CreateMode.EPHEMERAL).forPath("/name", "aaaaa".getBytes())
+        .and().setData().forPath("/name", "bbb".getBytes())
+        .and().commit();
+}
+```
+
