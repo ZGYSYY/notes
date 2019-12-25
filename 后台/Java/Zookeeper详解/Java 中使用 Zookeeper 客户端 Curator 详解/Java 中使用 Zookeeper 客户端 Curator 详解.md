@@ -600,3 +600,129 @@ public class Test07App {
 <b>注意：</b>在此示例中没有使用TimeUnit.MILLISECONDS.sleep(100)，但是事件触发次数也是正常的。
 
 <b>注意：</b>TreeCache在初始化(调用start()方法)的时候会回调TreeCacheListener实例一个事TreeCacheEvent，而回调的TreeCacheEvent对象的Type为INITIALIZED，ChildData为null，此时event.getData().getPath()很有可能导致空指针异常，这里应该主动处理并避免这种情况。
+
+## Leader选举
+
+使用场景如下，当我们的某些功能要提供高可用时，比如，服务器突然崩溃了，导致功能不能访问，这时就可以把该功能部署到多台机器上，但是并不是让这些机器上的功能同时对外提供服务，而是选一台机器上的功能对外提供服务，其他机器上的功能用作备用，当正在对外提供服务的机器出现故障时，我们就执行 Leader 选举，再选择一台机器来对外提供服务，这样就保证了服务的高可用。
+
+Curator 有两种 leader 选举的方式,分别是**LeaderSelector**和**LeaderLatch**。
+
+### LeaderLatch
+
+LeaderLatch有两个构造函数：
+
+```java
+public LeaderLatch(CuratorFramework client, String latchPath)
+public LeaderLatch(CuratorFramework client, String latchPath,  String id)
+```
+
+LeaderLatch的启动：
+
+```java
+leaderLatch.start( );
+```
+
+一旦启动，LeaderLatch 会和其它使用相同`latchPath`的其它 LeaderLatch 交涉，然后其中一个最终会被选举为leader，可以通过`leaderLatch.hasLeadership()`方法查看LeaderLatch实例是否leader,`true`说明当前实例是leader。
+
+<b>异常处理：</b> LeaderLatch实例可以增加ConnectionStateListener来监听网络连接问题。 当 SUSPENDED 或 LOST 时, leader不再认为自己还是leader。当LOST后连接重连后RECONNECTED,LeaderLatch会删除先前的ZNode然后重新创建一个。LeaderLatch用户必须考虑导致leadership丢失的连接问题。 强烈推荐你使用ConnectionStateListener。
+
+示例代码如下：
+
+```java
+package com.zgy.test;
+
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.recipes.leader.LeaderLatch;
+import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
+import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.curator.utils.CloseableUtils;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * @author ZGY
+ * @date 2019/12/25 15:11
+ * @description Test08App, Curator 高级特性 leader 选举
+ */
+public class Test08App {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Test08App.class);
+
+    /**
+     * 使用 LeaderLatch
+     */
+    @Test
+    public void test() throws Exception {
+        List<CuratorFramework> clientList = new ArrayList<>();
+        List<LeaderLatch> leaderLatchList = new ArrayList<>();
+        ExponentialBackoffRetry retry = new ExponentialBackoffRetry(1000, 3);
+
+        for (int i = 0; i < 5; i++) {
+            CuratorFramework client = CuratorFrameworkFactory.newClient("127.0.0.1:2181", 5000, 5000, retry);
+            clientList.add(client);
+
+            final LeaderLatch latch = new LeaderLatch(client, "/francis/leader", "#client" + i);
+            latch.addListener(new LeaderLatchListener() {
+                @Override
+                public void isLeader() {
+                    LOGGER.info("I am Leader, id: [{}]", latch.getId());
+                }
+
+                @Override
+                public void notLeader() {
+                    LOGGER.info("I am not Leader, id: [{}]", latch.getId());
+                }
+            });
+            leaderLatchList.add(latch);
+
+            client.start();
+            latch.start();
+        }
+
+        LOGGER.info("程序停止10秒开始");
+        TimeUnit.SECONDS.sleep(10);
+        LOGGER.info("程序停止10秒结束");
+
+        LeaderLatch currentLatch = null;
+        for (LeaderLatch latch : leaderLatchList) {
+            if (latch.hasLeadership()) {
+                currentLatch = latch;
+                break;
+            }
+        }
+        LOGGER.info("current leader is {}", currentLatch.getId());
+        currentLatch.close();
+        LOGGER.info("release the leader {}", currentLatch.getId());
+
+        TimeUnit.SECONDS.sleep(5);
+
+        for (LeaderLatch latch : leaderLatchList) {
+            if (latch.hasLeadership()) {
+                currentLatch = latch;
+                break;
+            }
+        }
+        LOGGER.info("current leader is {}", currentLatch.getId());
+        currentLatch.close();
+        LOGGER.info("release the leader {}", currentLatch.getId());
+
+        TimeUnit.SECONDS.sleep(10);
+
+        for (LeaderLatch latch : leaderLatchList) {
+            if (null != latch.getState() && !latch.getState().equals(LeaderLatch.State.CLOSED)) {
+                CloseableUtils.closeQuietly(latch);
+            }
+        }
+        for (CuratorFramework client : clientList) {
+            CloseableUtils.closeQuietly(client);
+        }
+    }
+}
+```
+
