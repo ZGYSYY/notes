@@ -277,3 +277,130 @@ public void test5() throws Exception {
 ```
 
 <b>注意：</b>如果#inBackground()方法不指定executor，那么会默认使用Curator的EventThread去进行异步处理。
+
+# Curator 高级特性
+
+<b>提醒：</b>强烈推荐使用ConnectionStateListener监控连接的状态，当连接状态为LOST，curator-recipes下的所有Api将会失效或者过期，尽管后面所有的例子都没有使用到ConnectionStateListener。
+
+## 缓存
+
+Zookeeper原生支持通过注册Watcher来进行事件监听，但是开发者需要反复注册(Watcher只能单次注册单次使用)。Cache是Curator中对事件监听的包装，可以看作是对事件监听的本地缓存视图，能够自动为开发者处理反复注册监听。Curator提供了三种Watcher(Cache)来监听结点的变化。
+
+### Path Cache
+
+Path Cache用来监控一个ZNode的子节点. 当一个子节点增加， 更新，删除时， Path Cache会改变它的状态， 会包含最新的子节点， 子节点的数据和状态，而状态的更变将通过PathChildrenCacheListener通知。
+
+实际使用时会涉及到四个类：
+
+- PathChildrenCache
+- PathChildrenCacheEvent
+- PathChildrenCacheListener
+- ChildData
+
+通过下面的构造函数创建Path Cache:
+
+```java
+public PathChildrenCache(CuratorFramework client, String path, boolean cacheData)
+```
+
+想使用cache，必须调用它的start方法，使用完后调用close方法。 可以设置StartMode来实现启动的模式。
+
+StartMode有下面几种：
+
+1. NORMAL：正常初始化。
+2. BUILD_INITIAL_CACHE：在调用start()之前会调用rebuild()。
+3. POST_INITIALIZED_EVENT： 当Cache初始化数据后发送一个PathChildrenCacheEvent.Type#INITIALIZED事件。
+
+`public void addListener(PathChildrenCacheListener listener)`可以增加listener监听缓存的变化。
+
+`getCurrentData()`方法返回一个List`<ChildData>`对象，可以遍历所有的子节点。
+
+设置/更新、移除其实是使用client (CuratorFramework)来操作, 不通过PathChildrenCache操作，案例如下代码所示：
+
+```java
+package com.zgy.test;
+
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.recipes.cache.*;
+import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.TimeUnit;
+
+/**
+ * @author ZGY
+ * @date 2019/12/25 10:31
+ * @description Test05App, Curator 高级特性案例
+ */
+public class Test05App {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Test05App.class);
+
+    @Test
+    public void test() throws Exception {
+        // 创建客户端 CuratorFramework 对象
+        CuratorFramework client = CuratorFrameworkFactory.builder()
+                .retryPolicy(new ExponentialBackoffRetry(1000, 3))
+                .connectString("127.0.0.1:2181")
+                .sessionTimeoutMs(5000)
+                .connectionTimeoutMs(5000)
+                .build();
+        // 连接 zookeeper服务器
+        client.start();
+        // 创建一个 PathChildrenCache 对象来监听对应路径下的的子节点
+        PathChildrenCache pathChildrenCache = new PathChildrenCache (client, "/example/cache", true);
+        // 开始监听子节点变化
+        pathChildrenCache.start();
+        // 当子节点数据变化时需要处理的逻辑
+        pathChildrenCache.getListenable().addListener((clientFramework, event) -> {
+            LOGGER.info("事件类型为：{}", event.getType());
+            if (null != event.getData()) {
+                LOGGER.info("节点路径为：{}，节点数据为：{}", event.getData().getPath(), new String(event.getData().getData()));
+            }
+        });
+
+        // 创建节点
+        client.create().creatingParentsIfNeeded().forPath("/example/cache/test01", "01".getBytes());
+        TimeUnit.MILLISECONDS.sleep(10);
+
+        // 创建节点
+        client.create().creatingParentsIfNeeded().forPath("/example/cache/test02", "02".getBytes());
+        TimeUnit.MILLISECONDS.sleep(10);
+
+        // 修改数据
+        client.setData().forPath("/example/cache/test01", "01_V2".getBytes());
+        TimeUnit.MILLISECONDS.sleep(10);
+
+        // 遍历缓存中的数据
+        for (ChildData childData : pathChildrenCache.getCurrentData()) {
+            LOGGER.info("获取childData对象数据, Path: [{}], Data: [{}]", childData.getPath(), new String(childData.getData()));
+        }
+
+        // 删除数据
+        client.delete().forPath("/example/cache/test01");
+        TimeUnit.MILLISECONDS.sleep(10);
+
+        // 删除数据
+        client.delete().forPath("/example/cache/test02");
+        TimeUnit.MILLISECONDS.sleep(10);
+
+        // 关闭监听
+        pathChildrenCache.close();
+
+        // 删除测试用的数据，如果存在子节点，一并删除
+        client.delete().deletingChildrenIfNeeded().forPath("/example");
+
+        // 断开与 zookeeper 的连接
+        client.close();
+        LOGGER.info("程序执行完毕");
+    }
+}
+```
+
+<b>注意：</b>如果new PathChildrenCache(client, PATH, true)中的参数cacheData值设置为false，则示例中的event.getData().getData()、data.getData()将返回null，cache将不会缓存节点数据。
+
+<b>注意：</b>示例中的Thread.sleep(10)可以注释掉，但是注释后事件监听的触发次数会不全，这可能与PathCache的实现原理有关，不能太过频繁的触发事件！
+
