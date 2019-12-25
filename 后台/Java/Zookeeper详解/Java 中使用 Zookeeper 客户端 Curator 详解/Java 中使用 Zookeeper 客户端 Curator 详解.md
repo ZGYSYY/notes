@@ -742,3 +742,7 @@ public class Test08App {
 }
 ```
 
+首先我们创建了5个LeaderLatch，启动后它们中的一个会被选举为leader。 因为选举会花费一些时间，start后并不能马上就得到leader。
+通过hasLeadership查看自己是否是leader， 如果是的话返回true。
+可以通过.getLeader().getId()可以得到当前的leader的ID。
+只能通过close释放当前的领导权
