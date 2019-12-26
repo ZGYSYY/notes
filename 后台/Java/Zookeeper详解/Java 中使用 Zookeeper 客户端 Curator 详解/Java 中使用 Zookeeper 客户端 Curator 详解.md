@@ -1,5 +1,4 @@
 <center><h1>Java 中使用 Zookeeper 客户端 Curator 详解</h1></center>
-
 # 目录
 
 * [简介](#简介)
@@ -863,3 +862,67 @@ public class Test09App {
 }
 ```
 
+**为什么推荐继承 LeaderSelectorListenerAdapter 类来实现 leader 选举？**
+
+查看 LeaderSelectorListenerAdapter 源代码如下：
+
+```java
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+package org.apache.curator.framework.recipes.leader;
+
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.state.ConnectionState;
+
+/**
+ * An implementation of {@link LeaderSelectorListener} that adds the recommended handling
+ * for connection state problems
+ */
+public abstract class LeaderSelectorListenerAdapter implements LeaderSelectorListener
+{
+    @Override
+    public void stateChanged(CuratorFramework client, ConnectionState newState)
+    {
+        if ( (newState == ConnectionState.SUSPENDED) || (newState == ConnectionState.LOST) )
+        {
+            throw new CancelLeadershipException();
+        }
+    }
+}
+```
+
+这里的意思就是，如果当前实例发生SUSPENDED（暂停）或者LOST（丢失）连接问题，最好直接抛CancelLeadershipException，此时，leaderSelector实例会尝试中断并且取消正在执行takeLeadership（）方法的线程。
+
+看 org.apache.curator.framework.recipes.leader.LeaderSelector 如下代码：
+
+```java
+@Override
+public void stateChanged(CuratorFramework client, ConnectionState newState) {
+    try
+    {
+        listener.stateChanged(client, newState);
+    }
+    catch ( CancelLeadershipException dummy )
+    {
+        leaderSelector.interruptLeadership();
+    }
+}
+```
+
+通过 debug 调试，当程序抛出 CancelLeadershipException 异常时会执行方法 `leaderSelector.interruptLeadership();`，该方法的作用就是让该实例放弃 leader 执行权。
