@@ -927,3 +927,5 @@ public void stateChanged(CuratorFramework client, ConnectionState newState) {
 
 通过 debug 调试，当程序抛出 CancelLeadershipException 异常时会执行方法 `leaderSelector.interruptLeadership();`，该方法的作用就是让该实例放弃 leader 执行权。
 
+## 分布式锁
+
