@@ -15,6 +15,7 @@
     * [Tree Cache](#tree-cache)
   * [Leader选举](#leader选举)
     * [LeaderLatch](#leaderlatch)
+    * [LeaderSelector](#leaderselector)
 
 # 简介
 
@@ -745,4 +746,120 @@ public class Test08App {
 首先我们创建了5个LeaderLatch，启动后它们中的一个会被选举为leader。 因为选举会花费一些时间，start后并不能马上就得到leader。
 通过hasLeadership查看自己是否是leader， 如果是的话返回true。
 可以通过.getLeader().getId()可以得到当前的leader的ID。
-只能通过close释放当前的领导权
+只能通过close释放当前的领导权。
+
+### LeaderSelector
+
+LeaderSelector使用的时候主要涉及下面几个类：
+
+- LeaderSelector
+- LeaderSelectorListener
+- LeaderSelectorListenerAdapter
+- CancelLeadershipException
+
+核心类是LeaderSelector，它的构造函数如下：
+
+```java
+public LeaderSelector(CuratorFramework client, String mutexPath,LeaderSelectorListener listener)
+public LeaderSelector(CuratorFramework client, String mutexPath, ThreadFactory threadFactory, Executor executor, LeaderSelectorListener listener)
+```
+
+类似LeaderLatch,LeaderSelector必须start: `leaderSelector.start();` 一旦启动，当实例取得领导权时你的listener的takeLeadership()方法被调用。当这个方法执行完后，该实例就会放弃 leader 的执行权。
+
+<b>注意：</b>当你不再使用LeaderSelector实例时，应该调用它的close方法。
+
+示例代码如下，推荐继承 LeaderSelectorListenerAdapter 类并实现 Closeable 接口：
+
+```java
+package com.zgy.test;
+
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.recipes.leader.LeaderSelector;
+import org.apache.curator.framework.recipes.leader.LeaderSelectorListenerAdapter;
+import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.curator.utils.CloseableUtils;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
+/**
+ * @author ZGY
+ * @date 2019/12/25 17:10
+ * @description Test09App, Curator 高级特性 leader 选举
+ */
+public class Test09App {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Test09App.class);
+
+    @Test
+    public void test() throws Exception {
+        List<CuratorFramework> clients = new ArrayList<>();
+        List<LeaderSelectorAdapter> examples = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            CuratorFramework client = CuratorFrameworkFactory.newClient("127.0.0.1:2181",
+                    new ExponentialBackoffRetry(20000, 3));
+            clients.add(client);
+            LeaderSelectorAdapter selectorAdapter = new LeaderSelectorAdapter(client, "/francis/leader", "Client #" + i);
+            examples.add(selectorAdapter);
+            // 连接 zookeeper 服务器
+            client.start();
+            // 开始执行 leader 选举
+            selectorAdapter.start();
+        }
+
+        // 测试完毕后，关闭选举和会话
+        TimeUnit.SECONDS.sleep(30);
+        LOGGER.info("开始回收数据了哦！");
+        for (LeaderSelectorAdapter example : examples) {
+            CloseableUtils.closeQuietly(example);
+        }
+        for (CuratorFramework client : clients) {
+            CloseableUtils.closeQuietly(client);
+        }
+    }
+
+    private class LeaderSelectorAdapter extends LeaderSelectorListenerAdapter implements Closeable {
+
+        private final String name;
+        private final LeaderSelector leaderSelector;
+        private final AtomicInteger leaderCount = new AtomicInteger();
+
+        public LeaderSelectorAdapter(CuratorFramework client, String path, String name) {
+            this.name = name;
+            this.leaderSelector = new LeaderSelector(client, path, this);
+            // 希望一个 selector 放弃 leader 后还要重新参与leader选举
+            this.leaderSelector.autoRequeue();
+        }
+
+        public void start() throws IOException {
+            leaderSelector.start();
+        }
+
+        @Override
+        public void close() throws IOException {
+            leaderSelector.close();
+        }
+
+        /**
+         * 当某个实例成为 leader 后就会执行这个方法，当这个方法执行完后，该实例就会放弃 leader 的执行权。
+         * @param client
+         * @throws Exception
+         */
+        @Override
+        public void takeLeadership(CuratorFramework client) throws Exception {
+            final int waitSeconds = new Random().nextInt(5);
+            LOGGER.info("{} 现在是 leader，接下来我会一直当 leader {} 秒钟，除开这一次，我已经当过 {} 次 leader 了！", name, waitSeconds, leaderCount.getAndIncrement());
+            TimeUnit.SECONDS.sleep(waitSeconds);
+        }
+    }
+}
+```
+
