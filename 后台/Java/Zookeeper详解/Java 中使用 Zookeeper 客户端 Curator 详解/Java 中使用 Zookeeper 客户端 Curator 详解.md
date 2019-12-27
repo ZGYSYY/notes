@@ -1,6 +1,7 @@
 <center><h1>Java 中使用 Zookeeper 客户端 Curator 详解</h1></center>
 # 目录
 
+* [目录](#目录)
 * [简介](#简介)
 * [Curator的基本Api](#curator的基本api)
   * [创建会话](#创建会话)
@@ -16,8 +17,8 @@
     * [LeaderLatch](#leaderlatch)
     * [LeaderSelector](#leaderselector)
   * [分布式锁](#分布式锁)
-    * [可重入共享锁 Shared Reentrant Lock](#可重入共享锁——Shared Reentrant Lock)
-    * [不可重入共享锁 Shared Lock](#不可重入共享锁——Shared Lock)
+    * [可重入共享锁 Shared Reentrant Lock](#可重入共享锁-shared-reentrant-lock)
+    * [不可重入共享锁 Shared Lock](#不可重入共享锁-shared-lock)
 * [结束](#结束)
 
 # 简介
@@ -935,7 +936,7 @@ public void stateChanged(CuratorFramework client, ConnectionState newState) {
 
 分布式的锁全局同步， 这意味着任何一个时间点不会有两个客户端都拥有相同的锁。
 
-### 可重入共享锁——Shared Reentrant Lock
+### 可重入共享锁 Shared Reentrant Lock
 
 **Shared意味着锁是全局可见的**， 客户端都可以请求锁。 Reentrant和JDK的ReentrantLock类似，即可重入， 意味着同一个客户端在拥有锁的同时，可以多次获取，不会被阻塞。 它是由类InterProcessMutex来实现。 它的构造函数为：
 
@@ -1122,7 +1123,7 @@ CloseableUtils.closeQuietly(client);
 
 这个代码我研究了好久，各种猜测，最后 debug 才明白是怎么回事，所以特地记录在此！
 
-### 不可重入共享锁——Shared Lock
+### 不可重入共享锁 Shared Lock
 
 这个锁和上面的 InterProcessMutex 相比，就是少了 Reentrant 的功能，也就意味着它不能在同一个线程中重入。这个类是 `InterProcessSemaphoreMutex` ,使用方法和 `InterProcessMutex` 类似。
 
