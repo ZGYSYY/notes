@@ -16,8 +16,8 @@
     * [LeaderLatch](#leaderlatch)
     * [LeaderSelector](#leaderselector)
   * [分布式锁](#分布式锁)
-    * [可重入共享锁——Shared Reentrant Lock](#可重入共享锁——Shared Reentrant Lock)
-    * [不可重入共享锁——Shared Lock](#不可重入共享锁——Shared Lock)
+    * [可重入共享锁 Shared Reentrant Lock](#可重入共享锁——Shared Reentrant Lock)
+    * [不可重入共享锁 Shared Lock](#不可重入共享锁——Shared Lock)
 * [结束](#结束)
 
 # 简介
