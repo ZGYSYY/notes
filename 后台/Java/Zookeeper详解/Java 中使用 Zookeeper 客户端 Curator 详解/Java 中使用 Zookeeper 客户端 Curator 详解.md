@@ -1,7 +1,6 @@
-<center><h1>Java 中使用 Zookeeper 客户端 Curator 详解</h1></center>
+<center><h1>Java 中使用 Zookeeper 客户端 Curator 详解</h1></center> 
+
 # 目录
-
-
 
 * [简介](#简介)
 * [Curator的基本Api](#curator的基本api)
