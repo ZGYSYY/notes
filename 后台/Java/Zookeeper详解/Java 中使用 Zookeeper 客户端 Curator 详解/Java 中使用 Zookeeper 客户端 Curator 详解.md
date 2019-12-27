@@ -15,6 +15,10 @@
   * [Leader选举](#leader选举)
     * [LeaderLatch](#leaderlatch)
     * [LeaderSelector](#leaderselector)
+  * [分布式锁](#分布式锁)
+    * [可重入共享锁——Shared Reentrant Lock](#可重入共享锁——Shared Reentrant Lock)
+    * [不可重入共享锁——Shared Lock](#不可重入共享锁——Shared Lock)
+* [结束](#结束)
 
 # 简介
 
@@ -1282,3 +1286,8 @@ public class Test11App {
 
 运行后发现，有且只有一个 client 成功获取第一个锁(第一个 acquire() 方法返回 true )，然后它自己阻塞在第二个 acquire() 方法，获取第二个锁失败，方法返回 false。这样也就验证了 `InterProcessSemaphoreMutex` 实现的锁是不可重入的。
 
+
+
+# 结束
+
+> 更多详细操作，请参考：http://throwable.coding.me/2018/12/16/zookeeper-curator-usage/
