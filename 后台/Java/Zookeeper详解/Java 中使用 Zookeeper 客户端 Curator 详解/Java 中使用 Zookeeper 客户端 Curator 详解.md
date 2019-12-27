@@ -929,3 +929,191 @@ public void stateChanged(CuratorFramework client, ConnectionState newState) {
 
 ## 分布式锁
 
+分布式的锁全局同步， 这意味着任何一个时间点不会有两个客户端都拥有相同的锁。
+
+### 可重入共享锁——Shared Reentrant Lock
+
+**Shared意味着锁是全局可见的**， 客户端都可以请求锁。 Reentrant和JDK的ReentrantLock类似，即可重入， 意味着同一个客户端在拥有锁的同时，可以多次获取，不会被阻塞。 它是由类InterProcessMutex来实现。 它的构造函数为：
+
+```java
+public InterProcessMutex(CuratorFramework client, String path)
+```
+
+通过`acquire()`获得锁，并提供超时机制：
+
+```java
+public void acquire();
+public boolean acquire(long time,TimeUnit unit);
+```
+
+通过`release()`方法释放锁。 InterProcessMutex 实例可以重用。
+
+<b>特别提醒：</b>错误处理 还是强烈推荐你使用 ConnectionStateListener 处理连接状态的改变。 当连接LOST时你不再拥有锁。
+
+示例代码如下：
+
+```java
+package com.zgy.test;
+
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.recipes.locks.InterProcessMutex;
+import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.curator.utils.CloseableUtils;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.util.Random;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+/**
+ * @author ZGY
+ * @date 2019/12/26 14:04
+ * @description Test10App
+ */
+public class Test10App {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Test10App.class);
+
+    @Test
+    public void test() throws InterruptedException {
+        // 创建需要共享的资源对象
+        final FakeLimitedResource resource = new FakeLimitedResource();
+        // 创建线程池对象
+        ExecutorService executorService = Executors.newFixedThreadPool(2);
+
+        final ExponentialBackoffRetry retry = new ExponentialBackoffRetry(1000, 3);
+
+        for (int i = 0; i < 2; i++) {
+            final int index = i;
+            Callable<Void> task = () -> {
+                CuratorFramework client = CuratorFrameworkFactory.newClient("127.0.0.1:2181", 5000, 5000, retry);
+                try {
+                    client.start();
+                    InterProcessMutexDemo mutexDemo = new InterProcessMutexDemo(client, "/examples/locks", resource, "我是客户端: " + index);
+                    for (int j = 0; j < 10; j++) {
+                        mutexDemo.doWork(10, TimeUnit.SECONDS);
+                    }
+                } catch (Exception e) {
+                    LOGGER.error("程序出现异常！", e);
+                } finally {
+                    // 关闭会话
+                    CloseableUtils.closeQuietly(client);
+                }
+                return null;
+            };
+
+            // 交给线程池执行
+            executorService.submit(task);
+        }
+
+        // 当线程池中的所有任务执行完后，关闭线程池
+        executorService.shutdown();
+
+        // 等待除主线程外其他线程都执行完毕
+        executorService.awaitTermination(10, TimeUnit.MINUTES);
+    }
+
+    /**
+     * 共享资源
+     */
+    private class FakeLimitedResource {
+
+        private final AtomicBoolean inUse = new AtomicBoolean(false);
+
+        public void use() throws InterruptedException {
+            // 如果设置值失败
+            if (!inUse.compareAndSet(false, true)) {
+                throw new RuntimeException("该资源的原始值不是 false，所以设置值失败！");
+            }
+
+            try {
+                // 模拟程序复杂业务
+                int seconds = new Random().nextInt(3);
+                LOGGER.info("模拟程序复杂业务，耗时 {} 秒", seconds);
+                TimeUnit.SECONDS.sleep(seconds);
+            } finally {
+                // 强制将 inUse 设置为 false
+                inUse.set(false);
+            }
+        }
+    }
+
+    /**
+     * 锁
+     */
+    private class InterProcessMutexDemo {
+
+        private InterProcessMutex lock;
+        private FakeLimitedResource resource;
+        private String clientName;
+
+        public InterProcessMutexDemo(CuratorFramework client, String lockPath, FakeLimitedResource resource, String clientName) {
+            this.lock = new InterProcessMutex(client, lockPath);
+            this.resource = resource;
+            this.clientName = clientName;
+        }
+
+        public void doWork(long time, TimeUnit unit) throws Exception {
+            /*try {
+                // 如果获取不到锁
+                LOGGER.info("{}， 第一次加锁", this.clientName);
+                if (!lock.acquire(time, unit)) {
+                    throw new RuntimeException(this.clientName + "，第一次获取锁失败！");
+                }
+
+                // 第二次获取锁测试可重入性
+                try {
+                    LOGGER.info("{}， 第二次加锁", this.clientName);
+                    if (!lock.acquire(time, unit)) {
+                        throw new RuntimeException(this.clientName + "，第二次获取锁失败！");
+                    }
+                    LOGGER.info("{} 获取到了锁！", this.clientName);
+                    resource.use();
+                } finally {
+                    LOGGER.info("{} 资源使用完毕，释第二次加的锁！", this.clientName);
+                    lock.release();
+                }
+
+                LOGGER.info("{} 获取到了锁！", this.clientName);
+                resource.use();
+            } finally {
+                LOGGER.info("{} 资源使用完毕，释第一次加的锁！", this.clientName);
+                lock.release();
+            }*/
+
+            try {
+                // 如果获取不到锁
+                LOGGER.info("{}， 第一次加锁", this.clientName);
+                if (!lock.acquire(time, unit)) {
+                    throw new RuntimeException(this.clientName + "，第一次获取锁失败！");
+                }
+
+                LOGGER.info("{}， 第二次加锁", this.clientName);
+                if (!lock.acquire(time, unit)) {
+                    throw new RuntimeException(this.clientName + "，第二次获取锁失败！");
+                }
+
+                LOGGER.info("{} 获取到了锁！", this.clientName);
+                resource.use();
+            } finally {
+                LOGGER.info("{} 资源使用完毕，释第一次加的锁！", this.clientName);
+                lock.release();
+                lock.release();
+            }
+        }
+    }
+}
+```
+
+<b>这里有个地方特别注意：</b>在上面的示例代码中，加多少次锁就要释放几次锁，不然在下次获取锁的时候就会高概率的抛异常。原因是 Curator 的分布式锁机制导致的，它创建的 zookeeper 节点的类型是**临时顺序**节点，而在获取节点的时候会先获取最先创建（序号最小）的节点。如果加 n 次锁过后没有释放 n 次锁，那么这个节点就依然还存活在 zookeeper 节点中，因此导致其他线程获取其他节点（序号不是最小的节点）时就获取不到锁，获取不了锁就会抛异常。之所以说是高概率而不是绝对，是因为在上面示例代码中是多线程环境，在代码中有这样一段代码如下：
+
+```java
+// 关闭会话
+CloseableUtils.closeQuietly(client);
+```
+
+所以当某个线程的客户端被关闭后，也相当于 zookeeper 中对应的节点也没有了，自然另外的线程就能获取到锁了。
+
+这个代码我研究了好久，各种猜测，最后 debug 才明白是怎么回事，所以特地记录在此！
