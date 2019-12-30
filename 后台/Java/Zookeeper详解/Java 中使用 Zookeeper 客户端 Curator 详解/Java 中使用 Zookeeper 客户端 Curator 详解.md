@@ -19,6 +19,7 @@
     * [可重入共享锁 Shared Reentrant Lock](#可重入共享锁-shared-reentrant-lock)
     * [不可重入共享锁 Shared Lock](#不可重入共享锁-shared-lock)
     * [可重入读写锁 Shared Reentrant Read Write Lock](#可重入读写锁-Shared-Reentrant-Read-Write-Lock)
+    * [信号量 Shared Semaphore](#信号量-Shared-Semaphore)
 * [结束](#结束)
 
 # 简介
@@ -1432,7 +1433,124 @@ public class Test12App {
 }
 ```
 
+### 信号量 Shared Semaphore
 
+一个计数的信号量类似JDK的Semaphore。 JDK中Semaphore维护的一组许可(**permits**)，而Curator中称之为租约(**Lease**)。 有两种方式可以决定semaphore的最大租约数。第一种方式是用户给定path并且指定最大LeaseSize。第二种方式用户给定path并且使用`SharedCountReader`类。**如果不使用SharedCountReader, 必须保证所有实例在多进程中使用相同的(最大)租约数量,否则有可能出现A进程中的实例持有最大租约数量为10，但是在B进程中持有的最大租约数量为20，此时租约的意义就失效了。**
+
+这次调用`acquire()`会返回一个租约对象。 客户端必须在finally中close这些租约对象，否则这些租约会丢失掉。 但是， 但是，如果客户端session由于某种原因比如crash丢掉， 那么这些客户端持有的租约会自动close， 这样其它客户端可以继续使用这些租约。 租约还可以通过下面的方式返还：
+
+```java
+public void returnAll(Collection<Lease> leases)
+public void returnLease(Lease lease)
+```
+
+注意你可以一次性请求多个租约，如果Semaphore当前的租约不够，则请求线程会被阻塞。 同时还提供了超时的重载方法。
+
+```java
+public Lease acquire()
+public Collection<Lease> acquire(int qty)
+public Lease acquire(long time, TimeUnit unit)
+public Collection<Lease> acquire(int qty, long time, TimeUnit unit)
+```
+
+Shared Semaphore使用的主要类包括下面几个：
+
+- InterProcessSemaphoreV2
+- Lease
+- SharedCountReader
+
+示例代码如下：
+
+```java
+package com.zgy.test;
+
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreV2;
+import org.apache.curator.framework.recipes.locks.Lease;
+import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Collection;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+/**
+ * @author ZGY
+ * @date 2019/12/30 14:55
+ * @description Test13App, 信号量—Shared Semaphore
+ */
+public class Test13App {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Test13App.class);
+
+    @Test
+    public void test() throws Exception {
+        FakeLimitedResource resource = new FakeLimitedResource();
+        ExponentialBackoffRetry retry = new ExponentialBackoffRetry(1000, 3);
+        CuratorFramework client = CuratorFrameworkFactory.newClient("127.0.0.1:2181", 10000, 5000, retry);
+        client.start();
+
+        // 定义信号量变量，最大租约为 10
+        InterProcessSemaphoreV2 semaphore = new InterProcessSemaphoreV2(client, "/examples/locks", 10);
+        // 获取 5 个租约
+        Collection<Lease> leases = semaphore.acquire(5);
+        LOGGER.info("leases 租约数量为：{}", leases.size());
+
+        // 获取 1 个租约
+        Lease lease = semaphore.acquire();
+        LOGGER.info("lease: [{}]", lease);
+
+        // 使用共享资源
+        resource.use();
+
+        // 在 6 秒内获取 5 个租约，如果获取不了就返回 null
+        Collection<Lease> leases2 = semaphore.acquire(5, 6, TimeUnit.SECONDS);
+        if (leases2 != null) {
+            LOGGER.info("leases2 租约数量为：{}", leases2.size());
+        } else {
+            LOGGER.info("在 6 秒内没有获取到 5 个租约，所以 leases2 为 null");
+        }
+
+        // 把使用的租约还给 semaphore
+        semaphore.returnLease(lease);
+        semaphore.returnAll(leases);
+        if (leases2 != null) {
+            semaphore.returnAll(leases2);
+        }
+    }
+
+    /**
+     * 共享资源
+     */
+    private class FakeLimitedResource {
+
+        private final AtomicBoolean inUse = new AtomicBoolean(false);
+
+        public void use() throws InterruptedException {
+            // 如果设置值失败
+            if (!inUse.compareAndSet(false, true)) {
+                throw new RuntimeException("该资源的原始值不是 false，所以设置值失败！");
+            }
+
+            try {
+                // 模拟程序复杂业务
+                int seconds = new Random().nextInt(3);
+                LOGGER.info("模拟程序复杂业务，耗时 {} 秒", seconds);
+                TimeUnit.SECONDS.sleep(seconds);
+            } finally {
+                // 强制将 inUse 设置为 false
+                inUse.set(false);
+            }
+        }
+    }
+}
+```
+
+首先我们先获得了5个租约， 最后我们把它还给了semaphore。 接着请求了一个租约，因为semaphore还有5个租约，所以请求可以满足，返回一个租约，还剩4个租约。 然后再请求一个租约，因为租约不够，**阻塞到超时，还是没能满足，返回结果为null(租约不足会阻塞到超时，然后返回null，不会主动抛出异常；如果不设置超时时间，会一致阻塞)。**
 
 # 结束
 
