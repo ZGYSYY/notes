@@ -21,6 +21,7 @@
     * [不可重入共享锁 Shared Lock](#不可重入共享锁-shared-lock)
     * [可重入读写锁 Shared Reentrant Read Write Lock](#可重入读写锁-Shared-Reentrant-Read-Write-Lock)
     * [信号量 Shared Semaphore](#信号量-Shared-Semaphore)
+    * [多共享锁对象 — Multi Shared Lock](#多共享锁对象-Multi-Shared-Lock)
 * [结束](#结束)
 
 # 简介
@@ -1552,6 +1553,112 @@ public class Test13App {
 ```
 
 首先我们先获得了5个租约， 最后我们把它还给了semaphore。 接着请求了一个租约，因为semaphore还有5个租约，所以请求可以满足，返回一个租约，还剩4个租约。 然后再请求一个租约，因为租约不够，**阻塞到超时，还是没能满足，返回结果为null(租约不足会阻塞到超时，然后返回null，不会主动抛出异常；如果不设置超时时间，会一致阻塞)。**
+
+### 多共享锁对象 Multi Shared Lock
+
+Multi Shared Lock是一个锁的容器。 当调用`acquire()`， 所有的锁都会被`acquire()`，如果请求失败，所有的锁都会被release。 同样调用release时所有的锁都被release(**失败被忽略**)。 基本上，它就是组锁的代表，在它上面的请求释放操作都会传递给它包含的所有的锁。
+
+主要涉及两个类：
+
+- InterProcessMultiLock
+- InterProcessLock
+
+它的构造函数需要包含的锁的集合，或者一组ZooKeeper的path。
+
+```java
+public InterProcessMultiLock(List<InterProcessLock> locks)
+public InterProcessMultiLock(CuratorFramework client, List<String> paths)
+```
+
+示例代码如下：
+
+```java
+package com.zgy.test;
+
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.recipes.locks.InterProcessLock;
+import org.apache.curator.framework.recipes.locks.InterProcessMultiLock;
+import org.apache.curator.framework.recipes.locks.InterProcessMutex;
+import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreMutex;
+import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.util.Arrays;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+/**
+ * @author ZGY
+ * @date 2019/12/30 16:03
+ * @description Test14App, 多共享锁对象 —Multi Shared Lock
+ */
+public class Test14App {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Test14App.class);
+
+    @Test
+    public void test() throws Exception {
+        FakeLimitedResource resource = new FakeLimitedResource();
+        CuratorFramework client = CuratorFrameworkFactory.newClient("127.0.0.1:2181", 10000, 5000, new ExponentialBackoffRetry(5000, 3));
+        client.start();
+
+        // 创建一个可重入锁对象
+        InterProcessLock lock = new InterProcessMutex(client, "/examples/locks");
+        // 创建一个不可重入锁对象
+        InterProcessLock lock2 = new InterProcessSemaphoreMutex(client, "/examples/locks2");
+        // 创建多共享锁对象
+        InterProcessLock lock3 = new InterProcessMultiLock(Arrays.asList(lock, lock2));
+
+        if (!lock3.acquire(2000, TimeUnit.SECONDS)) {
+            LOGGER.info("获取所有的锁失败！");
+            return;
+        }
+
+        LOGGER.info("获取所有的锁成功！lock 是否获取到了锁：{}, lock2 是否获取到了锁：{}", lock.isAcquiredInThisProcess(), lock2.isAcquiredInThisProcess());
+
+        try {
+            // 使用共享资源
+            resource.use();
+        } finally {
+            // 释放所有锁
+            lock3.release();
+            LOGGER.info("释放所有的锁成功！lock 是否获取到了锁：{}, lock2 是否获取到了锁：{}", lock.isAcquiredInThisProcess(), lock2.isAcquiredInThisProcess());
+        }
+    }
+
+    /**
+     * 共享资源
+     */
+    private class FakeLimitedResource {
+
+        private final AtomicBoolean inUse = new AtomicBoolean(false);
+
+        public void use() throws InterruptedException {
+            // 如果设置值失败
+            if (!inUse.compareAndSet(false, true)) {
+                throw new RuntimeException("该资源的原始值不是 false，所以设置值失败！");
+            }
+
+            try {
+                // 模拟程序复杂业务
+                int seconds = new Random().nextInt(3);
+                LOGGER.info("模拟程序复杂业务，耗时 {} 秒", seconds);
+                TimeUnit.SECONDS.sleep(seconds);
+            } finally {
+                // 强制将 inUse 设置为 false
+                inUse.set(false);
+            }
+        }
+    }
+}
+```
+
+新建一个`InterProcessMultiLock`， 包含一个重入锁和一个非重入锁。 调用`acquire()`后可以看到线程同时拥有了这两个锁。 调用`release()`看到这两个锁都被释放了。
+
+**最后再重申一次， 强烈推荐使用ConnectionStateListener监控连接的状态，当连接状态为LOST，锁将会丢失。**
 
 # 结束
 
