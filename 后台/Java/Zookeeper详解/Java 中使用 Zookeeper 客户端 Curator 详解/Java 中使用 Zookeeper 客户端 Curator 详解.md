@@ -1,5 +1,4 @@
 <center><h1>Java 中使用 Zookeeper 客户端 Curator 详解</h1></center> 
-
 # 目录
 
 * [简介](#简介)
@@ -1286,6 +1285,151 @@ public class Test11App {
 ```
 
 运行后发现，有且只有一个 client 成功获取第一个锁(第一个 acquire() 方法返回 true )，然后它自己阻塞在第二个 acquire() 方法，获取第二个锁失败，方法返回 false。这样也就验证了 `InterProcessSemaphoreMutex` 实现的锁是不可重入的。
+
+### 可重入读写锁 Shared Reentrant Read Write Lock
+
+类似JDK的**ReentrantReadWriteLock**。一个读写锁管理一对相关的锁。一个负责读操作，另外一个负责写操作。读操作在写锁没被使用时可同时由多个进程使用，而写锁在使用时不允许读(阻塞)。
+
+此锁是可重入的。**一个拥有写锁的线程可重入读锁，但是读锁却不能进入写锁**。这也意味着**写锁可以降级成读锁， 比如请求写锁 —>请求读锁—>释放读锁 —->释放写锁**。从读锁升级成写锁是不行的。
+
+可重入读写锁主要由两个类实现：`InterProcessReadWriteLock`、`InterProcessMutex`。使用时首先创建一个`InterProcessReadWriteLock`实例，然后再根据你的需求得到读锁或者写锁，读写锁的类型是`InterProcessMutex`。
+
+示例代码如下：
+
+```java
+package com.zgy.test;
+
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.recipes.locks.InterProcessMutex;
+import org.apache.curator.framework.recipes.locks.InterProcessReadWriteLock;
+import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.curator.utils.CloseableUtils;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+/**
+ * @author ZGY
+ * @date 2019/12/30 13:59
+ * @description Test12App, 可重入读写锁 Shared Reentrant Read Write Lock
+ */
+public class Test12App {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Test12App.class);
+
+    @Test
+    public void test() throws InterruptedException {
+        ExponentialBackoffRetry retry = new ExponentialBackoffRetry(1000, 3);
+
+        final FakeLimitedResource resource = new FakeLimitedResource();
+        ExecutorService executorService = Executors.newFixedThreadPool(5);
+        for (int i = 0; i < 5; i++) {
+            final int index = i;
+            Runnable task = () -> {
+                final CuratorFramework client = CuratorFrameworkFactory.newClient("127.0.0.1:2181", 5000, 5000, retry);
+                try {
+                    client.start();
+                    ReentrantReadWriteLockDemo demo = new ReentrantReadWriteLockDemo(client, "/examples/locks", resource, "客户端" + index);
+                    demo.doWork(5, TimeUnit.SECONDS);
+                } finally {
+                    CloseableUtils.closeQuietly(client);
+                }
+            };
+            executorService.execute(task);
+        }
+
+        executorService.shutdown();
+
+        executorService.awaitTermination(5, TimeUnit.MINUTES);
+    }
+
+    private class ReentrantReadWriteLockDemo {
+
+        private final InterProcessReadWriteLock lock;
+        private final InterProcessMutex readLock;
+        private final InterProcessMutex writeLock;
+        private final FakeLimitedResource resource;
+        private final String clientName;
+
+        public ReentrantReadWriteLockDemo(CuratorFramework client, String lockPath, FakeLimitedResource resource, String clientName) {
+            this.lock = new InterProcessReadWriteLock(client, lockPath);
+            this.readLock = this.lock.readLock();
+            this.writeLock = this.lock.writeLock();
+            this.resource = resource;
+            this.clientName = clientName;
+        }
+
+        /**
+         * 业务功能
+         * @param time
+         * @param unit
+         */
+        public void doWork(long time, TimeUnit unit) {
+            try {
+                if (!this.writeLock.acquire(time, unit)) {
+                    LOGGER.info("{} 不能获取到写锁", this.clientName);
+                }
+                LOGGER.info("{} 已得到写锁", this.clientName);
+                if (!this.readLock.acquire(time, unit)) {
+                    LOGGER.info("{} 不能获取到读锁", this.clientName);
+                }
+                LOGGER.info("{} 已得到读锁", this.clientName);
+
+                LOGGER.info("开始使用共享资源");
+                resource.use();
+                LOGGER.info("共享资源使用完毕");
+            } catch (Exception e) {
+                LOGGER.error("public void doWork(long time, TimeUnit unit) 方法发生异常！", e);
+            } finally {
+                try {
+                    LOGGER.info("业务处理完毕，开始释放锁");
+                    if (this.readLock.isAcquiredInThisProcess()) {
+                        this.readLock.release();
+                    }
+                    if (this.writeLock.isAcquiredInThisProcess()) {
+                        this.writeLock.release();
+                    }
+                    LOGGER.info("锁释放成功！");
+                } catch (Exception e) {
+                    LOGGER.error("public void doWork(long time, TimeUnit unit) 方法释放锁发生异常！", e);
+                }
+            }
+        }
+    }
+
+    /**
+     * 共享资源
+     */
+    private class FakeLimitedResource {
+
+        private final AtomicBoolean inUse = new AtomicBoolean(false);
+
+        public void use() throws InterruptedException {
+            // 如果设置值失败
+            if (!inUse.compareAndSet(false, true)) {
+                throw new RuntimeException("该资源的原始值不是 false，所以设置值失败！");
+            }
+
+            try {
+                // 模拟程序复杂业务
+                int seconds = new Random().nextInt(3);
+                LOGGER.info("模拟程序复杂业务，耗时 {} 秒", seconds);
+                TimeUnit.SECONDS.sleep(seconds);
+            } finally {
+                // 强制将 inUse 设置为 false
+                inUse.set(false);
+            }
+        }
+    }
+}
+```
 
 
 
