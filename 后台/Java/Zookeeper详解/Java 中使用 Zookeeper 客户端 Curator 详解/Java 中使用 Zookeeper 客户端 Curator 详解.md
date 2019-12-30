@@ -22,6 +22,7 @@
     * [可重入读写锁 Shared Reentrant Read Write Lock](#可重入读写锁-Shared-Reentrant-Read-Write-Lock)
     * [信号量 Shared Semaphore](#信号量-Shared-Semaphore)
     * [多共享锁对象 — Multi Shared Lock](#多共享锁对象-Multi-Shared-Lock)
+    * [分布式int计数器(SharedCount)](#分布式int计数器sharedcount)
 * [结束](#结束)
 
 # 简介
@@ -1659,6 +1660,135 @@ public class Test14App {
 新建一个`InterProcessMultiLock`， 包含一个重入锁和一个非重入锁。 调用`acquire()`后可以看到线程同时拥有了这两个锁。 调用`release()`看到这两个锁都被释放了。
 
 **最后再重申一次， 强烈推荐使用ConnectionStateListener监控连接的状态，当连接状态为LOST，锁将会丢失。**
+
+## 分布式计数器
+
+顾名思义，计数器是用来计数的, 利用ZooKeeper可以实现一个集群共享的计数器。 只要使用相同的path就可以得到最新的计数器值， 这是由ZooKeeper的一致性保证的。Curator有两个计数器， 一个是用int来计数(`SharedCount`)，一个用long来计数(`DistributedAtomicLong`)。
+
+### 分布式int计数器(SharedCount)
+
+这个类使用int类型来计数。 主要涉及三个类。
+
+- SharedCount
+- SharedCountReader
+- SharedCountListener
+
+`SharedCount`代表计数器， 可以为它增加一个`SharedCountListener`，当计数器改变时此Listener可以监听到改变的事件，而`SharedCountReader`可以读取到最新的值， 包括字面值和带版本信息的值VersionedValue。
+
+示例代码如下：
+
+```java
+package com.zgy.test;
+
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.recipes.shared.SharedCount;
+import org.apache.curator.framework.recipes.shared.SharedCountListener;
+import org.apache.curator.framework.recipes.shared.SharedCountReader;
+import org.apache.curator.framework.state.ConnectionState;
+import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * @author ZGY
+ * @date 2019/12/30 16:56
+ * @description Test15App, 分布式int计数器—SharedCount
+ */
+public class Test15App {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Test15App.class);
+
+    @Test
+    public void test() throws Exception {
+        final Random random = new Random();
+        SharedCounterDemo demo = new SharedCounterDemo();
+        CuratorFramework client = CuratorFrameworkFactory.newClient("127.0.0.1:2181", 10000, 5000, new ExponentialBackoffRetry(2000, 3));
+        client.start();
+        // 创建计数器对象
+        SharedCount sharedCount = new SharedCount(client, "/examples/counter", 0);
+        // 给计数器对象添加监听器
+        sharedCount.addListener(demo);
+        // 启动计数器
+        sharedCount.start();
+
+        List<SharedCount> sharedCounts = new ArrayList<>();
+        ExecutorService executorService = Executors.newFixedThreadPool(5);
+        for (int i = 0; i < 5; i++) {
+            final SharedCount SharedCount = new SharedCount(client, "/examples/counter", 0);
+            sharedCounts.add(sharedCount);
+            Callable<Void> task = () -> {
+                SharedCount.start();
+                TimeUnit.SECONDS.sleep(random.nextInt(10));
+                boolean b = SharedCount.trySetCount(sharedCount.getVersionedValue(), random.nextInt(100));
+                while (!b) {
+                    b = SharedCount.trySetCount(sharedCount.getVersionedValue(), random.nextInt(100));
+                }
+                LOGGER.info("修改数据，b: [{}]", b);
+                return null;
+            };
+            executorService.submit(task);
+        }
+
+        executorService.shutdown();
+        executorService.awaitTermination(10, TimeUnit.MINUTES);
+
+        // 关闭计数器
+        for (SharedCount count : sharedCounts) {
+            count.close();
+        }
+
+        sharedCount.close();
+    }
+
+    private class SharedCounterDemo implements SharedCountListener {
+        /**
+         * 数字更改时触发
+         * @param sharedCount
+         * @param newCount
+         * @throws Exception
+         */
+        @Override
+        public void countHasChanged(SharedCountReader sharedCount, int newCount) throws Exception {
+            LOGGER.info("数据被修改为：{}", newCount);
+        }
+
+        /**
+         * 状态更改时触发
+         * @param client
+         * @param newState
+         */
+        @Override
+        public void stateChanged(CuratorFramework client, ConnectionState newState) {
+            LOGGER.info("状态被修改为了：{}", newState);
+        }
+    }
+}
+```
+
+在这个例子中，我们使用`baseCount`来监听计数值(`addListener`方法来添加SharedCountListener )。 任意的SharedCount， 只要使用相同的path，都可以得到这个计数值。 然后我们使用5个线程为计数值增加一个10以内的随机数。相同的path的SharedCount对计数值进行更改，将会回调给`baseCount`的SharedCountListener。
+
+```java
+boolean b = SharedCount.trySetCount(sharedCount.getVersionedValue(), random.nextInt(100));
+while (!b) {
+    b = SharedCount.trySetCount(sharedCount.getVersionedValue(), random.nextInt(100));
+}
+```
+
+这里我们使用`trySetCount`去设置计数器。 **第一个参数提供当前的VersionedValue,如果期间其它client更新了此计数值， 你的更新可能不成功， 更新不成功会返回 false。所以失败了你可以尝试再更新一次。 而`setCount`是强制更新计数器的值**。
+
+注意计数器必须`start`,使用完之后必须调用`close`关闭它。
+
+强烈推荐使用`ConnectionStateListener`。 在本例中`SharedCountListener`扩展`ConnectionStateListener`。
 
 # 结束
 
