@@ -1,5 +1,4 @@
 <center><h1>Java 中使用 Zookeeper 客户端 Curator 详解&emsp;</h1></center>
-
 # 目录
 
 * [简介](#简介)
@@ -17,12 +16,17 @@
     * [LeaderLatch](#leaderlatch)
     * [LeaderSelector](#leaderselector)
   * [分布式锁](#分布式锁)
+    
     * [可重入共享锁 Shared Reentrant Lock](#可重入共享锁-shared-reentrant-lock)
     * [不可重入共享锁 Shared Lock](#不可重入共享锁-shared-lock)
     * [可重入读写锁 Shared Reentrant Read Write Lock](#可重入读写锁-Shared-Reentrant-Read-Write-Lock)
     * [信号量 Shared Semaphore](#信号量-Shared-Semaphore)
     * [多共享锁对象 — Multi Shared Lock](#多共享锁对象-Multi-Shared-Lock)
     * [分布式int计数器(SharedCount)](#分布式int计数器sharedcount)
+    * [分布式long计数器(DistributedAtomicLong)](#分布式long计数器(DistributedAtomicLong))
+  * [分布式队列](#分布式队列)
+    * [分布式队列(DistributedQueue)](#分布式队列(DistributedQueue))
+
 * [结束](#结束)
 
 # 简介
@@ -1789,6 +1793,266 @@ while (!b) {
 注意计数器必须`start`,使用完之后必须调用`close`关闭它。
 
 强烈推荐使用`ConnectionStateListener`。 在本例中`SharedCountListener`扩展`ConnectionStateListener`。
+
+### 分布式long计数器(DistributedAtomicLong)
+
+再看一个Long类型的计数器。 除了计数的范围比`SharedCount`大了之外， 它首先尝试使用乐观锁的方式设置计数器， 如果不成功(比如期间计数器已经被其它client更新了)， 它使用`InterProcessMutex`方式来更新计数值。
+
+可以从它的内部实现`DistributedAtomicValue.trySet()`中看出：
+
+```java
+AtomicValue < byte[] > trySet(MakeValue makeValue) throws Exception {
+    MutableAtomicValue < byte[] > result = new MutableAtomicValue < byte[] > (null, null, false);
+    tryOptimistic(result, makeValue);
+    if(!result.succeeded() && (mutex != null)) {
+        tryWithMutex(result, makeValue);
+    }
+    return result;
+}
+```
+
+此计数器有一系列的操作：
+
+- get(): 获取当前值
+- increment()： 加一
+- decrement(): 减一
+- add()： 增加特定的值
+- subtract(): 减去特定的值
+- trySet(): 尝试设置计数值
+- forceSet(): 强制设置计数值
+
+你**必须**检查返回结果的`succeeded()`， 它代表此操作是否成功。 如果操作成功， `preValue()`代表操作前的值， `postValue()`代表操作后的值。
+
+示例代码如下：
+
+```java
+package com.zgy.test;
+
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.recipes.atomic.AtomicValue;
+import org.apache.curator.framework.recipes.atomic.DistributedAtomicLong;
+import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.curator.retry.RetryNTimes;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * @author ZGY
+ * @date 2019/12/30 17:29
+ * @description Test16App, 分布式long计数器—DistributedAtomicLong
+ */
+public class Test16App {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Test16App.class);
+
+    @Test
+    public void test() throws InterruptedException {
+        CuratorFramework client = CuratorFrameworkFactory.newClient("127.0.0.1:2181", 10000, 5000, new ExponentialBackoffRetry(2000, 3));
+        client.start();
+
+        ExecutorService executorService = Executors.newFixedThreadPool(5);
+        for (int i = 0; i < 5; i++) {
+            /**
+             * 重试策略对象，参数解释如下：
+             * 第一个参数：重试次数
+             * 第二个参数：重试之间的睡眠时间
+             */
+            RetryNTimes retryNTimes = new RetryNTimes(2, 2);
+            final DistributedAtomicLong atomicLong = new DistributedAtomicLong(client, "/examples/counter", retryNTimes);
+            Callable<Void> task = () -> {
+                try {
+                    // 加 1
+                    AtomicValue<Long> value = atomicLong.increment();
+                    if (value.succeeded()) {
+                        LOGGER.info("修改前的值为：{}， 修改后的值为：{}", value.preValue(), value.postValue());
+                    } else {
+                        LOGGER.info("修改失败");
+                    }
+                } catch (Exception e) {
+                    LOGGER.error("程序出现异常！", e);
+                }
+                return null;
+            };
+
+            executorService.submit(task);
+        }
+
+        executorService.shutdown();
+        executorService.awaitTermination(10, TimeUnit.MINUTES);
+    }
+}
+```
+
+## 分布式队列
+
+使用Curator也可以简化Ephemeral Node (**临时节点**)的操作。Curator也提供ZK Recipe的分布式队列实现。 利用ZK的 PERSISTENTS_EQUENTIAL节点， 可以保证放入到队列中的项目是按照顺序排队的。 如果单一的消费者从队列中取数据， 那么它是先入先出的，这也是队列的特点。 如果你严格要求顺序，你就的使用单一的消费者，可以使用Leader选举只让Leader作为唯一的消费者。
+
+但是， 根据Netflix的Curator作者所说， ZooKeeper真心不适合做Queue，或者说ZK没有实现一个好的Queue，详细内容可以看 [Tech Note 4](https://cwiki.apache.org/confluence/display/CURATOR/TN4)， 原因有五：
+
+1. ZK有1MB 的传输限制。 实践中ZNode必须相对较小，而队列包含成千上万的消息，非常的大。
+2. 如果有很多节点，ZK启动时相当的慢。 而使用queue会导致好多ZNode. 你需要显著增大 initLimit 和 syncLimit.
+3. ZNode很大的时候很难清理。Netflix不得不创建了一个专门的程序做这事。
+4. 当很大量的包含成千上万的子节点的ZNode时， ZK的性能变得不好
+5. ZK的数据库完全放在内存中。 大量的Queue意味着会占用很多的内存空间。
+
+尽管如此， Curator还是创建了各种Queue的实现。 如果Queue的数据量不太多，数据量不太大的情况下，酌情考虑，还是可以使用的。
+
+### 分布式队列(DistributedQueue)
+
+DistributedQueue是最普通的一种队列。 它设计以下四个类：
+
+- QueueBuilder - 创建队列使用QueueBuilder,它也是其它队列的创建类
+- QueueConsumer - 队列中的消息消费者接口
+- QueueSerializer - 队列消息序列化和反序列化接口，提供了对队列中的对象的序列化和反序列化
+- DistributedQueue - 队列实现类
+
+QueueConsumer是消费者，它可以接收队列的数据。处理队列中的数据的代码逻辑可以放在QueueConsumer.consumeMessage()中。
+
+**正常情况下先将消息从队列中移除，再交给消费者消费。但这是两个步骤，不是原子的。**可以调用Builder的lockPath()消费者加锁，当消费者消费数据时持有锁，这样其它消费者不能消费此消息。如果消费失败或者进程死掉，消息可以交给其它进程。这会带来一点性能的损失。最好还是单消费者模式使用队列。
+
+示例代码如下：
+
+```java
+package com.zgy.test;
+
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.recipes.queue.DistributedQueue;
+import org.apache.curator.framework.recipes.queue.QueueBuilder;
+import org.apache.curator.framework.recipes.queue.QueueConsumer;
+import org.apache.curator.framework.recipes.queue.QueueSerializer;
+import org.apache.curator.framework.state.ConnectionState;
+import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * @author ZGY
+ * @date 2020/1/3 14:43
+ * @description Test17App, 分布式队列—DistributedQueue
+ */
+public class Test17App {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Test17App.class);
+
+    @Test
+    public void test() throws Exception {
+        CuratorFramework client = CuratorFrameworkFactory.newClient("127.0.0.1:2181", 10000, 5000, new ExponentialBackoffRetry(1000, 3));
+        CuratorFramework client2 = CuratorFrameworkFactory.newClient("127.0.0.1:2181", 10000, 5000, new ExponentialBackoffRetry(1000, 3));
+
+        // 客户端启动
+        client.start();
+        // 客户端2启动
+        client2.start();
+
+        /**
+         * 是线程不安全的
+         */
+        // DistributedQueue<String> queue = QueueBuilder.builder(client, createQueueConsumer("消费者A"), creQueueSerializer(), "/example/queue").buildQueue();
+        // DistributedQueue<String> queue2 = QueueBuilder.builder(client, createQueueConsumer("消费者B"), creQueueSerializer(), "/example/queue").buildQueue();
+
+        /**
+         * 正常情况下先将消息从队列中移除，再交给消费者消费。但这是两个步骤，不是原子的。
+         * 可以调用Builder的lockPath()消费者加锁，当消费者消费数据时持有锁，这样其它消费者不能消费此消息。
+         * 如果消费失败或者进程死掉，消息可以交给其它进程。这会带来一点性能的损失。最好还是单消费者模式使用队列。
+         */
+        DistributedQueue<String> queue = QueueBuilder.builder(client, createQueueConsumer("消费者A"), creQueueSerializer(), "/example/queue").lockPath("/example/lock").buildQueue();
+        DistributedQueue<String> queue2 = QueueBuilder.builder(client, createQueueConsumer("消费者B"), creQueueSerializer(), "/example/queue").lockPath("/example/lock").buildQueue();
+
+        // 消息队列启动
+        queue.start();
+        // 消息队列2启动
+        queue2.start();
+
+        for (int i = 0; i < 100; i++) {
+            // 往消息队列中放数据
+            queue.put("Test-A-" + i);
+            TimeUnit.MILLISECONDS.sleep(10);
+            // 往消息队列2中放数据
+             queue2.put("Test-B-" + i);
+        }
+
+        TimeUnit.SECONDS.sleep(20);
+
+        // 关闭消息队列
+        queue.close();
+        // 关闭消息队列2
+        queue2.close();
+
+        // 客户端关闭
+        client.close();
+        // 客户端2关闭
+        client2.close();
+        LOGGER.info("程序执行结束！");
+    }
+
+    /**
+     * 定义队列消费者
+     * @return
+     */
+    private QueueConsumer<String> createQueueConsumer(final String name) {
+        return new QueueConsumer<String>() {
+            /**
+             * 消费消息时调用的方法
+             * @param message
+             * @throws Exception
+             */
+            @Override
+            public void consumeMessage(String message) throws Exception {
+                LOGGER.info("{} 消费消息：{}", name, message);
+            }
+
+            /**
+             * 状态改变时调用的方法
+             * @param client
+             * @param newState
+             */
+            @Override
+            public void stateChanged(CuratorFramework client, ConnectionState newState) {
+                LOGGER.info("连接状态为：{}", newState.name());
+            }
+        };
+    }
+
+    /**
+     * 队列消息序列化实现类
+     * @return
+     */
+    private QueueSerializer<String> creQueueSerializer() {
+        return new QueueSerializer<String>() {
+            /**
+             * 序列化
+             * @param item
+             * @return
+             */
+            @Override
+            public byte[] serialize(String item) {
+                return item.getBytes();
+            }
+
+            /**
+             * 反序列化
+             * @param bytes
+             * @return
+             */
+            @Override
+            public String deserialize(byte[] bytes) {
+                return new String(bytes);
+            }
+        };
+    }
+}
+```
+
+例子中定义了两个分布式队列和两个消费者，因为PATH是相同的，通常会存在消费者抢占消费消息的情况，但是我使用了 `lockPath(/example/lock)` 方法，所以不会，如果将该代码注释掉，然后方案前面注释的代码，就会出现消费者抢占消费消息的情况（但是我测试了 N 次，也没有出现这个这种情况）。
 
 # 结束
 
