@@ -26,9 +26,9 @@
     * [信号量 Shared Semaphore](#信号量-Shared-Semaphore)
     * [多共享锁对象 — Multi Shared Lock](#多共享锁对象-Multi-Shared-Lock)
     * [分布式int计数器(SharedCount)](#分布式int计数器sharedcount)
-    * [分布式long计数器(DistributedAtomicLong)](#分布式long计数器(DistributedAtomicLong))
+    * [分布式long计数器(DistributedAtomicLong)](#分布式long计数器DistributedAtomicLong)
   * [分布式队列](#分布式队列)
-    * [分布式队列(DistributedQueue)](#分布式队列(DistributedQueue))
+    * [分布式队列(DistributedQueue)](#分布式队列DistributedQueue)
 
 * [结束](#结束)
 
