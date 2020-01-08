@@ -41,6 +41,8 @@
     
   * [分布式栅栏(屏障)——Barrier](#分布式栅栏屏障barrier)
   
+    * [双栅栏(DistributedDoubleBarrier)](#双栅栏DistributedDoubleBarrier)
+  
 * [结束](#结束)
 
 # 简介
@@ -2688,6 +2690,91 @@ public class Test22App {
 
 这个例子创建了`controlBarrier`来设置栅栏和移除栅栏。 我们创建了5个线程，在此Barrier上等待。 最后移除栅栏后所有的线程才继续执行。
 
+### 双栅栏(DistributedDoubleBarrier)
+
+双栅栏允许客户端在计算的开始和结束时同步。当足够的进程加入到双栅栏时，进程开始计算， 当计算完成时，离开栅栏。 双栅栏类是`DistributedDoubleBarrier`。 构造函数为:
+
+```java
+public DistributedDoubleBarrier(CuratorFramework client,
+                                String barrierPath,
+                                int memberQty)
+```
+
+`memberQty`是成员数量，当`enter()`方法被调用时，成员被阻塞，直到所有的成员都调用了`enter()`。 当`leave()`方法被调用时，它也阻塞调用线程，直到所有的成员都调用了`leave()`。 就像百米赛跑比赛， 发令枪响， 所有的运动员开始跑，等所有的运动员跑过终点线，比赛才结束。
+
+DistributedDoubleBarrier会监控连接状态，当连接断掉时`enter()`和`leave()`方法会抛出异常。
+
+示例代码如下：
+
+```java
+package com.zgy.test;
+
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.recipes.barriers.DistributedDoubleBarrier;
+import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Random;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * @author ZGY
+ * @date 2020/1/8 18:07
+ * @description Test23App, 双栅栏—DistributedDoubleBarrier
+ */
+public class Test23App {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Test23App.class);
+
+    @Test
+    public void test() throws InterruptedException {
+        CuratorFramework client = CuratorFrameworkFactory.newClient("127.0.0.1:2181", 20000, 5000, new ExponentialBackoffRetry(5000, 3));
+        client.start();
+
+        // 创建线程池
+        ExecutorService executorService = Executors.newFixedThreadPool(5);
+
+
+        Random random = new Random();
+
+        for (int i = 0; i < 5; i++) {
+            // 创建栅栏对象
+            final DistributedDoubleBarrier doubleBarrier = new DistributedDoubleBarrier(client, "/examples/barrier", 5);
+            final int index = i;
+            Callable<Void> task = () -> {
+                TimeUnit.MILLISECONDS.sleep(random.nextInt(3));
+                LOGGER.info("客户端 #" + index + "进入栅栏");
+                doubleBarrier.enter();
+
+                // 当所有线程都进入栅栏后，执行下面的代码
+                LOGGER.info("执行代码");
+                TimeUnit.SECONDS.sleep(random.nextInt(3));
+
+                doubleBarrier.leave();
+                LOGGER.info("客户端 #" + index + "离开栅栏");
+
+                return null;
+            };
+            executorService.submit(task);
+        }
+
+        // 关闭线程池
+        executorService.shutdown();
+
+        // 和 executorService.shutdown() 组合使用，监控线程池是否已经关闭，如果线程池内之前提交的任务还没有完成，会一直监控到任务处理完成后。
+        executorService.awaitTermination(10, TimeUnit.MINUTES);
+    }
+}
+```
+
 # 结束
 
-> 更多详细操作，请参考：http://throwable.coding.me/2018/12/16/zookeeper-curator-usage/
+源代码：https://github.com/ZGYSYY/spring-boot-seckill/blob/master/src/test/java/com/zgy/test
+
+> 本文参考自：http://throwable.coding.me/2018/12/16/zookeeper-curator-usage/
