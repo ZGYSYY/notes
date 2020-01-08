@@ -39,7 +39,7 @@
     * [分布式延迟队列(DistributedDelayQueue)](#分布式延迟队列DistributedDelayQueue)
     * [基于JDK的分布式队列(SimpleDistributedQueue)](#基于JDK的分布式队列SimpleDistributedQueue)
     
-  * [分布式栅栏(屏障)——Barrier](#分布式栅栏\(屏障\)\—\—Barrier)
+  * [分布式栅栏(屏障)——Barrier](#分布式栅栏屏障barrier)
   
 * [结束](#结束)
 
