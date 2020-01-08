@@ -37,6 +37,7 @@
     
     * [优先级分布式队列(DistributedPriorityQueue)](#优先级分布式队列DistributedPriorityQueue)
     * [分布式延迟队列(DistributedDelayQueue)](#分布式延迟队列DistributedDelayQueue)
+    * [基于JDK的分布式队列(SimpleDistributedQueue)](#基于JDK的分布式队列SimpleDistributedQueue)
   
 * [结束](#结束)
 
@@ -2423,6 +2424,150 @@ public class Test20App {
                 LOGGER.info("当前连接的状态改变了，新状态为：{}", newState);
             }
         };
+    }
+}
+```
+
+### 基于JDK的分布式队列(SimpleDistributedQueue)
+
+前面虽然实现了各种队列，但是你注意到没有，这些队列并没有实现类似JDK一样的接口。 `SimpleDistributedQueue`提供了和JDK基本一致的接口(但是没有实现Queue接口)。 创建很简单：
+
+```java
+public SimpleDistributedQueue(CuratorFramework client,String path)
+```
+
+增加元素：
+
+```java
+public boolean offer(byte[] data) throws Exception
+```
+
+删除元素：
+
+```java
+public byte[] take() throws Exception
+```
+
+另外还提供了其它方法：
+
+```java
+public byte[] peek() throws Exception
+public byte[] poll(long timeout, TimeUnit unit) throws Exception
+public byte[] poll() throws Exception
+public byte[] remove() throws Exception
+public byte[] element() throws Exception
+```
+
+没有`add`方法， 多了`take`方法。`take`方法在成功返回之前会被阻塞。 而`poll`方法在队列为空时直接返回null。
+
+示例代码如下：
+
+```java
+package com.zgy.test;
+
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.recipes.queue.SimpleDistributedQueue;
+import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.curator.utils.CloseableUtils;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.TimeUnit;
+
+/**
+ * @author ZGY
+ * @date 2020/1/8 16:22
+ * @description Test21App，SimpleDistributedQueue
+ */
+public class Test21App {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Test21App.class);
+
+    @Test
+    public void test() throws InterruptedException {
+        CuratorFramework client = CuratorFrameworkFactory.newClient("127.0.0.1:2181", 20000, 5000, new ExponentialBackoffRetry(5000, 3));
+        client.getCuratorListenable().addListener((client1, event) -> {
+            LOGGER.info("监听客户端连接事件，事件名为：{}", event.getType().name());
+        });
+        client.start();
+
+        // 创建队列对象
+        SimpleDistributedQueue queue = new SimpleDistributedQueue(client, "/example/queue");
+
+        // 创建生产者和消费者对象
+        Producer producer = new Producer(queue);
+        Consumer consumer = new Consumer(queue);
+
+        // 启动生产者和消费者线程
+        new Thread(producer).start();
+        new Thread(consumer).start();
+
+        // 等待队列中的数据处理完毕
+        TimeUnit.SECONDS.sleep(10);
+
+        // 释放资源
+        CloseableUtils.closeQuietly(client);
+
+        LOGGER.info("程序执行完毕！");
+    }
+
+    /**
+     * 消费者
+     */
+    private class Consumer implements Runnable {
+
+        private SimpleDistributedQueue queue;
+
+        public Consumer(SimpleDistributedQueue queue) {
+            this.queue = queue;
+        }
+
+        @Override
+        public void run() {
+            try {
+                while (true) {
+                    byte[] bytes = this.queue.take();
+                    if (bytes == null) {
+                        break;
+                    }
+                    LOGGER.info("消费一条消息成功：{}", new String(bytes));
+                }
+            } catch (Exception e) {
+                LOGGER.error("程序出现异常!", e);
+                return;
+            }
+        }
+    }
+
+    /**
+     * 生产者
+     */
+    private class Producer implements Runnable {
+
+        private SimpleDistributedQueue queue;
+
+        public Producer(SimpleDistributedQueue queue) {
+            this.queue = queue;
+        }
+
+        @Override
+        public void run() {
+            for (int i = 0; i < 5; i++) {
+                try {
+                    boolean flag = this.queue.offer(("test-" + i).getBytes());
+                    if (flag) {
+                        LOGGER.info("发送消息成功：{}", "test-" + i);
+                    } else {
+                        LOGGER.info("发送消息失败：{}", "test-" + i);
+                    }
+                } catch (Exception e) {
+                    LOGGER.error("程序发生异常！", e);
+                    continue;
+                }
+            }
+        }
     }
 }
 ```
