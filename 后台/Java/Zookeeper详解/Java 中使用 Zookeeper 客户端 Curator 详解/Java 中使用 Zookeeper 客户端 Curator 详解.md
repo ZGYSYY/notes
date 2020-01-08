@@ -36,6 +36,7 @@
     * [带Id的分布式队列(DistributedIdQueue)](#带Id的分布式队列DistributedIdQueue)
     
     * [优先级分布式队列(DistributedPriorityQueue)](#优先级分布式队列DistributedPriorityQueue)
+    * [分布式延迟队列(DistributedDelayQueue)](#分布式延迟队列DistributedDelayQueue)
   
 * [结束](#结束)
 
@@ -2308,6 +2309,125 @@ public class Test19App {
 ```
 
 有时候你可能会有错觉，优先级设置并没有起效。那是因为优先级是对于队列积压的元素而言，如果消费速度过快有可能出现在后一个元素入队操作之前前一个元素已经被消费，这种情况下DistributedPriorityQueue会退化为DistributedQueue。
+
+### 分布式延迟队列(DistributedDelayQueue)
+
+JDK中也有DelayQueue，不知道你是否熟悉。 DistributedDelayQueue也提供了类似的功能， 元素有个delay值， 消费者隔一段时间才能收到元素。 涉及到下面四个类。
+
+- QueueBuilder
+- QueueConsumer
+- QueueSerializer
+- DistributedDelayQueue
+
+通过下面的语句创建：
+
+```java
+QueueBuilder<MessageType>    builder = QueueBuilder.builder(client, consumer, serializer, path);
+... more builder method calls as needed ...
+DistributedDelayQueue<MessageType> queue = builder.buildDelayQueue();
+```
+
+放入元素时可以指定`delayUntilEpoch`：
+
+```java
+queue.put(aMessage, delayUntilEpoch);
+```
+
+注意`delayUntilEpoch`不是离现在的一个时间间隔， 比如20毫秒，而是未来的一个时间戳，如 System.currentTimeMillis() + 10秒。 如果delayUntilEpoch的时间已经过去，消息会立刻被消费者接收。
+
+示例代码如下：
+
+```java
+package com.zgy.test;
+
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.recipes.queue.DistributedDelayQueue;
+import org.apache.curator.framework.recipes.queue.QueueBuilder;
+import org.apache.curator.framework.recipes.queue.QueueConsumer;
+import org.apache.curator.framework.recipes.queue.QueueSerializer;
+import org.apache.curator.framework.state.ConnectionState;
+import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.curator.utils.CloseableUtils;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * @author ZGY
+ * @date 2020/1/8 15:53
+ * @description Test20App, 分布式延迟队列—DistributedDelayQueue
+ */
+public class Test20App {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Test20App.class);
+
+    @Test
+    public void test() throws Exception {
+        CuratorFramework client = CuratorFrameworkFactory.newClient("127.0.0.1:2181", 10000, 5000, new ExponentialBackoffRetry(5000, 3));
+        client.getCuratorListenable().addListener((client1, event) -> {
+            LOGGER.info("监听客户端连接事件，事件名为：{}", event.getType().name());
+        });
+        client.start();
+
+        // 创建延时队列对象
+        DistributedDelayQueue<String> queue = QueueBuilder.builder(client, createQueueConsumer(), createQueueSerializer(), "/example/queue").buildDelayQueue();
+        queue.start();
+
+        for (int i = 0; i < 10; i++) {
+            queue.put("Test-" + i, System.currentTimeMillis() + 1000);
+        }
+
+        LOGGER.info("所有的数据都已经放入了延时队列中！");
+
+        // 等待消费者消费完队列数据再释放资源
+        TimeUnit.SECONDS.sleep(10);
+
+        // 释放资源
+        CloseableUtils.closeQuietly(queue);
+        CloseableUtils.closeQuietly(client);
+    }
+
+    /**
+     * 创建序列化和反序列化对象
+     * @return
+     */
+    private QueueSerializer<String> createQueueSerializer() {
+        return new QueueSerializer<String>() {
+            @Override
+            public byte[] serialize(String item) {
+                return item.getBytes();
+            }
+
+            @Override
+            public String deserialize(byte[] bytes) {
+                return new String(bytes);
+            }
+        };
+    }
+
+    /**
+     * 创建消费者对象
+     * @return
+     */
+    private QueueConsumer<String> createQueueConsumer() {
+        return new QueueConsumer<String>() {
+            @Override
+            public void consumeMessage(String message) throws Exception {
+                LOGGER.info("消费的消息内容为：{}", message);
+            }
+
+            @Override
+            public void stateChanged(CuratorFramework client, ConnectionState newState) {
+                LOGGER.info("当前连接的状态改变了，新状态为：{}", newState);
+            }
+        };
+    }
+}
+```
+
+
 
 # 结束
 
