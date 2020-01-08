@@ -26,7 +26,8 @@
     * [分布式long计数器(DistributedAtomicLong)](#分布式long计数器DistributedAtomicLong)
   * [分布式队列](#分布式队列)
     * [分布式队列(DistributedQueue)](#分布式队列DistributedQueue)
-
+  * [带Id的分布式队列(DistributedIdQueue)](#带Id的分布式队列DistributedIdQueue)
+  
 * [结束](#结束)
 
 # 简介
