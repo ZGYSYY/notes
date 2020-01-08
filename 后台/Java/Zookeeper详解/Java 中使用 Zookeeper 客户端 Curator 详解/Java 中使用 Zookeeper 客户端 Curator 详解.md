@@ -15,9 +15,11 @@
     * [Path Cache](#path-cache)
     * [Node Cache](#node-cache)
     * [Tree Cache](#tree-cache)
+    
   * [Leader选举](#leader选举)
     * [LeaderLatch](#leaderlatch)
     * [LeaderSelector](#leaderselector)
+    
   * [分布式锁](#分布式锁)
     
     * [可重入共享锁 Shared Reentrant Lock](#可重入共享锁-shared-reentrant-lock)
@@ -27,9 +29,12 @@
     * [多共享锁对象 — Multi Shared Lock](#多共享锁对象-Multi-Shared-Lock)
     * [分布式int计数器(SharedCount)](#分布式int计数器sharedcount)
     * [分布式long计数器(DistributedAtomicLong)](#分布式long计数器DistributedAtomicLong)
+  
   * [分布式队列](#分布式队列)
+    
     * [分布式队列(DistributedQueue)](#分布式队列DistributedQueue)
-  * [带Id的分布式队列(DistributedIdQueue)](#带Id的分布式队列DistributedIdQueue)
+    * [带Id的分布式队列(DistributedIdQueue)](#带Id的分布式队列DistributedIdQueue)
+    
     * [优先级分布式队列(DistributedPriorityQueue)](#优先级分布式队列DistributedPriorityQueue)
   
 * [结束](#结束)
