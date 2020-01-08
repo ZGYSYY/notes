@@ -41,6 +41,7 @@
     
   * [分布式栅栏(屏障)——Barrier](#分布式栅栏屏障barrier)
   
+    * [DistributedBarrier](#DistributedBarrier)
     * [双栅栏(DistributedDoubleBarrier)](#双栅栏DistributedDoubleBarrier)
   
 * [结束](#结束)
