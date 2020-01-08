@@ -30,6 +30,7 @@
   * [分布式队列](#分布式队列)
     * [分布式队列(DistributedQueue)](#分布式队列DistributedQueue)
   * [带Id的分布式队列(DistributedIdQueue)](#带Id的分布式队列DistributedIdQueue)
+    * [优先级分布式队列(DistributedPriorityQueue)](#优先级分布式队列DistributedPriorityQueue)
   
 * [结束](#结束)
 
@@ -2187,6 +2188,121 @@ public class Test18App {
 ```
 
 在这个例子中， 有些元素还没有被消费者消费前就移除了，这样消费者不会收到删除的消息。
+
+### 优先级分布式队列(DistributedPriorityQueue)
+
+优先级队列对队列中的元素按照优先级进行排序。 **Priority越小， 元素越靠前， 越先被消费掉**。 它涉及下面几个类：
+
+- QueueBuilder
+- QueueConsumer
+- QueueSerializer
+- DistributedPriorityQueue
+
+通过builder.buildPriorityQueue(minItemsBeforeRefresh)方法创建。 当优先级队列得到元素增删消息时，它会暂停处理当前的元素队列，然后刷新队列。minItemsBeforeRefresh指定刷新前当前活动的队列的最小数量。 主要设置你的程序可以容忍的不排序的最小值。
+
+放入队列时需要指定优先级：
+
+```java
+queue.put(aMessage, priority);
+```
+
+示例代码如下：
+
+```java
+package com.zgy.test;
+
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.recipes.queue.DistributedPriorityQueue;
+import org.apache.curator.framework.recipes.queue.QueueBuilder;
+import org.apache.curator.framework.recipes.queue.QueueConsumer;
+import org.apache.curator.framework.recipes.queue.QueueSerializer;
+import org.apache.curator.framework.state.ConnectionState;
+import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.curator.utils.CloseableUtils;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * @author ZGY
+ * @date 2020/1/8 15:32
+ * @description Test19App, 优先级分布式队列—DistributedPriorityQueue
+ */
+public class Test19App {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Test19App.class);
+
+    /**
+     * 测试方法
+     */
+    @Test
+    public void test() throws Exception {
+        CuratorFramework client = CuratorFrameworkFactory.newClient("127.0.0.1:2181", 10000, 5000, new ExponentialBackoffRetry(5000, 3));
+        client.getCuratorListenable().addListener((client1, event) -> {
+            LOGGER.info("监听客户端连接事件，事件名为：{}", event.getType().name());
+        });
+        client.start();
+
+        // 创建优先级队列对象
+        DistributedPriorityQueue<String> queue = QueueBuilder.builder(client, createQueueConsumer(), createQueueSerializer(), "/example/queue").buildPriorityQueue(0);
+        queue.start();
+
+        Random random = new Random();
+        for (int i = 0; i < 10; i++) {
+            int priority = random.nextInt(100);
+            LOGGER.info("Test-" + i + " priority: " + priority);
+            queue.put("Test" + i, priority);
+            TimeUnit.SECONDS.sleep(random.nextInt(2));
+        }
+
+        LOGGER.info("程序执行完毕！开始回收资源");
+
+        CloseableUtils.closeQuietly(queue);
+        CloseableUtils.closeQuietly(client);
+    }
+
+    /**
+     * 创建序列化和反序列化对象
+     * @return
+     */
+    private QueueSerializer<String> createQueueSerializer() {
+        return new QueueSerializer<String>() {
+            @Override
+            public byte[] serialize(String item) {
+                return item.getBytes();
+            }
+
+            @Override
+            public String deserialize(byte[] bytes) {
+                return new String(bytes);
+            }
+        };
+    }
+
+    /**
+     * 创建消费者对象
+     * @return
+     */
+    private QueueConsumer<String> createQueueConsumer() {
+        return new QueueConsumer<String>() {
+            @Override
+            public void consumeMessage(String message) throws Exception {
+                LOGGER.info("消费的消息内容为：{}", message);
+            }
+
+            @Override
+            public void stateChanged(CuratorFramework client, ConnectionState newState) {
+                LOGGER.info("当前连接的状态改变了，新状态为：{}", newState);
+            }
+        };
+    }
+}
+```
+
+有时候你可能会有错觉，优先级设置并没有起效。那是因为优先级是对于队列积压的元素而言，如果消费速度过快有可能出现在后一个元素入队操作之前前一个元素已经被消费，这种情况下DistributedPriorityQueue会退化为DistributedQueue。
 
 # 结束
 
