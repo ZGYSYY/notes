@@ -1,4 +1,7 @@
-<h1>MySql 笔记</h1>
+<center><h1>MySql 笔记</h1></center>
+
+
+
 **创建用户**
 
 ```sql
