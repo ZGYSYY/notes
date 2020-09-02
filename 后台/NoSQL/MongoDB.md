@@ -31,3 +31,4 @@ MongoDB和SQL术语对比，如图所示。
 # 参考资料
 
 - [菜鸟教程——MongoDB](https://www.runoob.com/mongodb/mongodb-tutorial.html)
+- [MongDB快速入门](https://mp.weixin.qq.com/s?src=11&timestamp=1599016016&ver=2559&signature=9C17OxjXPIR7OMKnWjBEjO39u2-fbyp32DdY4*t0Jd4cvYlYl40AzTJGBK*MzRtFHE6WaqpwZyYwOe7HEWCYiRqTjDvyhx3DiCnPdRqbcmtbzhTFrfMdI*BaKWInnfS1&new=1)
