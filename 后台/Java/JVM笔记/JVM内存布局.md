@@ -1,6 +1,10 @@
 <h1><b>JVM 内存布局</b></h1>
 
+
+
 > 本文摘抄自https://mp.weixin.qq.com/s/hOGKhhwMwL_3rIJ4egQlcg，并根据自己的对知识点的理解，做了相应的修改和完善，仅用于自己以后方便查阅。
+
+
 
 # 概念
 
@@ -38,9 +42,9 @@ Java 堆是垃圾收集器管理的主要区域，因此很多时候也被称做
 
 <b>如何调整呢？</b>
 
-通过设置如下参数，可以设定堆区的初始值和最大值，比如 <span style="color:red;">-Xms256M -Xmx 1024M</span>，其中 <span style="color:red;">-X</span> 这个字母代表它是 JVM 运行时参数，<span style="color:red;">ms</span> 是 <span style="color:red;">memory start</span> 的简称，中文意思就是内存初始值，<span style="color:red;">mx</span> 是 <span style="color:red;">memory max</span> 的简称，意思就是最大内存。
+通过设置如下参数，可以设定堆区的初始值和最大值，比如 <font color="red">-Xms256M -Xmx 1024M</font>，其中 <font color="red">-X</font> 这个字母代表它是 JVM 运行时参数，<font color="red">ms</font> 是 <font color="red">memory start</font> 的简称，中文意思就是内存初始值，<font color="red">mx</font> 是 <font color="red">memory max</font> 的简称，意思就是最大内存。
 
-值得注意的是，在通常情况下，服务器在运行过程中，堆空间不断地扩容与回缩，会形成不必要的系统压力所以在线上生产环境中 JVM 的 <span style="color:red;">Xms</span> 和 <span style="color:red;">Xmx</span> 会设置成同样大小，避免在 GC 后调整堆大小时带来的额外压力。
+值得注意的是，在通常情况下，服务器在运行过程中，堆空间不断地扩容与回缩，会形成不必要的系统压力所以在线上生产环境中 JVM 的 <font color="red">>Xms</font> 和 <font color="red">Xmx</font> 会设置成同样大小，避免在 GC 后调整堆大小时带来的额外压力。
 
 ## 3、堆的默认空间分配
 
@@ -74,7 +78,7 @@ Java HotSpot(TM) 64-Bit Server VM (build 25.131-b11, mixed mode)
 
 ![image-20200929171645700](https://raw.githubusercontent.com/ZGYSYY/notes-resources/master/后台/Java/JVM笔记/JVM 内存布局/image-20200929171645700.png)
 
-因为新生代是由 <span color="red">Eden + S0 + S1</span> 组成的，所以按照上述默认比例，如果 <span style="color:red;">eden</span> 区内存大小是 40M，那么两个 <span style="color:red;">survivor</span> 区就是 5M，整个 <span style="color:red;">young</span> 区就是 50M，然后可以算出 <span style="color:red;">Old</span> 区内存大小是 100M，堆区总大小就是 150M。
+因为新生代是由 <font color="red">Eden + S0 + S1</font> 组成的，所以按照上述默认比例，如果<font color="red">eden</font> 区内存大小是 40M，那么两个<font color="red">survivor</font> 区就是 5M，整个<font color="red">young</font> 区就是 50M，然后可以算出<font color="red">Old</font> 区内存大小是 100M，堆区总大小就是 150M。
 
 ## 4、堆溢出演示
 
@@ -115,7 +119,7 @@ PS：-XX:+HeapDumpOnOutOfMemoryError 可以让 JVM 在遇到 OOM 异常时，输
 
 ![image-20200929172341989](https://raw.githubusercontent.com/ZGYSYY/notes-resources/master/后台/Java/JVM笔记/JVM%20内存布局/image-20200929172341989.png)
 
-绝大部分对象在 <span style="color:red;">Eden</span> 区生成，当 Eden 区装填满的时候，会触发 <span style="color:red;">Young Garbage Collection</span>，即 <span style="color:red;">YGC</span>。垃圾回收的时候，在 <span style="color:red;">Eden</span> 区实现清除策略，没有被引用的对象则直接回收。依然存活的对象会被移送到 <span style="color:red;">Survivor</span> 区。<span style="color:red;">Survivor</span> 区分为 so 和 s1 两块内存空间。每次 <span style="color:red;">YGC</span> 的时候，它们将存活的对象复制到未使用的那块空间，然后将当前正在使用的空间完全清除，交换两块空间的使用状态。如果 YGC 要移送的对象大于 <span style="color:red;">Survivor</span> 区容量的上限，则直接移交给老年代。一个对象也不可能永远呆在新生代，就像人到了 18 岁就会成年一样，在 JVM 中 <span style="color:red;">－XX:MaxTenuringThreshold</span> 参数就是来配置一个对象从新生代晋升到老年代的阈值。默认值是 15，可以在 <span style="color:red;">Survivor</span> 区交换 14 次之后，晋升至老年代。
+绝大部分对象在<font color="red">Eden</font> 区生成，当 Eden 区装填满的时候，会触发<font color="red">Young Garbage Collection</font>，即<font color="red">YGC</font>。垃圾回收的时候，在<font color="red">Eden</font> 区实现清除策略，没有被引用的对象则直接回收。依然存活的对象会被移送到<font color="red">Survivor</font> 区。<span style="color:red;">Survivor</font> 区分为 so 和 s1 两块内存空间。每次<font color="red">YGC</font> 的时候，它们将存活的对象复制到未使用的那块空间，然后将当前正在使用的空间完全清除，交换两块空间的使用状态。如果 YGC 要移送的对象大于<font color="red">Survivor</font> 区容量的上限，则直接移交给老年代。一个对象也不可能永远呆在新生代，就像人到了 18 岁就会成年一样，在 JVM 中<font color="red">－XX:MaxTenuringThreshold</font> 参数就是来配置一个对象从新生代晋升到老年代的阈值。默认值是 15，可以在<font color="red">Survivor</font> 区交换 14 次之后，晋升至老年代。
 
 # Java 虚拟机栈
 
@@ -125,7 +129,7 @@ PS：-XX:+HeapDumpOnOutOfMemoryError 可以让 JVM 在遇到 OOM 异常时，输
 
 PS：栈对应线程，栈帧对应方法。
 
-在活动线程中， 只有位于栈顶的帧才是有效的， 称为当前栈帧。正在执行的方法称为当前方法。在执行引擎运行时， 所有指令都只能针对当前栈帧进行操作。而 <span style="color:red;">StackOverflowError</span> 表示请求的栈溢出， 导致内存耗尽， 通常出现在递归方法中。
+在活动线程中， 只有位于栈顶的帧才是有效的， 称为当前栈帧。正在执行的方法称为当前方法。在执行引擎运行时， 所有指令都只能针对当前栈帧进行操作。而<font color="red">StackOverflowError</font> 表示请求的栈溢出， 导致内存耗尽， 通常出现在递归方法中。
 
 虚拟机栈通过 pop 和 push 的方式，对每个方法对应的活动栈帧进行运算处理，方法正常执行结束，肯定会跳转到另一个栈帧上。在执行的过程中，如果出现了异常，会进行异常回溯，返回地址通过异常处理表确定。
 
@@ -195,9 +199,9 @@ public class OperandStackTest {
 
 操作数栈的每一个元素可用是任意的Java数据类型，包括long和double。32位数据类型所占的栈容量为1，64位数据类型占用的栈容量为2。
 
-当一个方法刚刚开始执行的时候，这个方法的操作数栈是空的，在方法执行的过程中，会有各种字节码指令往操作数栈中写入和提取内容，也就是 <span style="color:Orange;">出栈 / 入栈</span>操作。
+当一个方法刚刚开始执行的时候，这个方法的操作数栈是空的，在方法执行的过程中，会有各种字节码指令往操作数栈中写入和提取内容，也就是 <font color="Orange">出栈 / 入栈</font>操作。
 
-例如，在做 <span style="color:Orange;">算术运算</span>的时候是通过操作数栈来进行的，又或者在调用其它方法的时候是通过操作数栈来进行 <span style="color:Orange;">参数传递</span>的。
+例如，在做 <font color="Orange">算术运算</font>的时候是通过操作数栈来进行的，又或者在调用其它方法的时候是通过操作数栈来进行 <font color="Orange">参数传递</font>的。
 
 ![image-20200929175919072](https://raw.githubusercontent.com/ZGYSYY/notes-resources/master/后台/Java/JVM笔记/JVM%20内存布局/image-20200929175919072.png)
 
@@ -215,7 +219,7 @@ public class OperandStackTest {
 
 方法执行时有两种退出情况：
 
-1. 正常退出，即正常执行到任何方法的返回字节码指令，如 <span style="color:red;">RETURN、IRETURN、ARETURN</span> 等。
+1. 正常退出，即正常执行到任何方法的返回字节码指令，如<font color="red">RETURN、IRETURN、ARETURN</font> 等。
 2. 异常退出，即在方法执行过程中遇到了异常，并且没有处理这个异常，就会导致方法退出。
 
 无论何种退出情况，都将返回至方法当前被调用的位置。方法退出的过程相当于弹出当前栈帧，退出可能有三种方式：
@@ -226,7 +230,7 @@ public class OperandStackTest {
 
 # 本地方法栈
 
-本地方法栈（Native Method Stack）与虚拟机栈所发挥的作用是非常相似的，它们之间的区别不过是虚拟机栈为虚拟机执行 Java 方法（也就是字节码）服务，而本地方法栈则为虚拟机使用到的 Native 方法服务。在虚拟机规范中对本地方法栈中方法使用的语言、使用方式与数据结构并没有强制规定，因此具体的虚拟机可以自由实现它。甚至有的虚拟机（譬如 Sun HotSpot 虚拟机）直接就把本地方法栈和虚拟机栈合二为一。与虚拟机栈一样，本地方法栈区域也会抛出 <span style="color:red;">StackOverflowError</span> 和 <span style="color:red;">OutOfMemoryError</span> 异常。
+本地方法栈（Native Method Stack）与虚拟机栈所发挥的作用是非常相似的，它们之间的区别不过是虚拟机栈为虚拟机执行 Java 方法（也就是字节码）服务，而本地方法栈则为虚拟机使用到的 Native 方法服务。在虚拟机规范中对本地方法栈中方法使用的语言、使用方式与数据结构并没有强制规定，因此具体的虚拟机可以自由实现它。甚至有的虚拟机（譬如 Sun HotSpot 虚拟机）直接就把本地方法栈和虚拟机栈合二为一。与虚拟机栈一样，本地方法栈区域也会抛出<font color="red">StackOverflowError</font> 和<font color="red">OutOfMemoryError</font> 异常。
 
 # 程序计数器
 
@@ -240,18 +244,18 @@ public class OperandStackTest {
 
 # Metaspace 元空间
 
-在 <span style="color:red;">HotSpot JVM</span> 中，永久代（ ≈ 方法区）中用于存放类和方法的元数据以及常量池，比如 <span style="color:red;">Class</span> 和 <span style="color:red;">Method</span>。每当一个类初次被加载的时候，它的元数据都会放到永久代中。
+在<font color="red">HotSpot JVM</font> 中，永久代（ ≈ 方法区）中用于存放类和方法的元数据以及常量池，比如<font color="red">Class</font> 和<font color="red">Method</font>。每当一个类初次被加载的时候，它的元数据都会放到永久代中。
 
-永久代是有大小限制的，因此如果加载的类太多，很有可能导致永久代内存溢出，即万恶的 <span style="color:red;">java.lang.OutOfMemoryError: PermGen</span>，为此我们不得不对虚拟机做调优。
+永久代是有大小限制的，因此如果加载的类太多，很有可能导致永久代内存溢出，即万恶的<font color="red">java.lang.OutOfMemoryError: PermGen</font>，为此我们不得不对虚拟机做调优。
 
-那么，Java 8 中 PermGen 为什么被移出 <span style="color:red;">HotSpot JVM</span> 了？（详见：JEP 122: Remove the Permanent Generation）：
+那么，Java 8 中 PermGen 为什么被移出<font color="red">HotSpot JVM</font> 了？（详见：JEP 122: Remove the Permanent Generation）：
 
-1. 由于 <span style="color:red;">PermGen</span> 内存经常会溢出，引发恼人的 <span style="color:red;">java.lang.OutOfMemoryError: PermGen</span>，因此 JVM 的开发者希望这一块内存可以更灵活地被管理，不要再经常出现这样的 OOM。
-2. 移除 PermGen 可以促进 <span style="color:red;">HotSpot JVM</span> 与 <span style="color:red;">JRockit VM</span> 的融合，因为 <span style="color:red;">JRockit</span> 没有永久代。
+1. 由于<font color="red">PermGen</font> 内存经常会溢出，引发恼人的<font color="red">java.lang.OutOfMemoryError: PermGen</font>，因此 JVM 的开发者希望这一块内存可以更灵活地被管理，不要再经常出现这样的 OOM。
+2. 移除 PermGen 可以促进<font color="red">HotSpot JVM</font> 与<font color="red">JRockit VM</font> 的融合，因为<font color="red">JRockit</font> 没有永久代。
 
-根据上面的各种原因，<span style="color:red;">PermGen</span> 最终被移除，方法区移至 <span style="color:red;">Metaspace</span>，字符串常量池移至堆区。
+根据上面的各种原因，<span style="color:red;">PermGen</font> 最终被移除，方法区移至<font color="red">Metaspace</font>，字符串常量池移至堆区。
 
-准确来说，Perm 区中的字符串常量池被移到了堆内存中是在 Java7 之后，Java 8 时，PermGen 被元空间代替，其他内容比如类元信息、字段、静态属性、方法、常量等都移动到元空间区。比如 <span style="color:red;">java/lang/Object</span> 类元信息、静态属性 System.out、整形常量 100000 等。
+准确来说，Perm 区中的字符串常量池被移到了堆内存中是在 Java7 之后，Java 8 时，PermGen 被元空间代替，其他内容比如类元信息、字段、静态属性、方法、常量等都移动到元空间区。比如<font color="red">java/lang/Object</font> 类元信息、静态属性 System.out、整形常量 100000 等。
 
 元空间的本质和永久代类似，都是对 JVM 规范中方法区的实现。不过元空间与永久代之间最大的区别在于：元空间并不在虚拟机中，而是使用本地内存。因此，默认情况下，元空间的大小仅受本地内存限制。（和后面提到的直接内存一样，都是使用本地内存）
 
@@ -274,18 +278,18 @@ public class OperandStackTest {
 
 直接内存（Direct Memory）并不是虚拟机运行时数据区的一部分，也不是 Java 虚拟机规范中定义的内存区域。但是这部分内存也被频繁地使用，而且也可能导致 OutOfMemoryError 异常出现，所以我们放到这里一起讲解。
 
-在 JDK 1.4 中新加入了 NIO（New Input/Output）类，引入了一种基于通道（Channel）与缓冲区（Buffer）的 I/O 方式，它可以使用 Native 函数库直接分配堆外内存，然后通过一个存储在 Java 堆中的 <span style="color:red;">DirectByteBuffer</span> 对象作为这块内存的引用进行操作。这样能在一些场景中显著提高性能，因为避免了在 Java 堆和 Native 堆中来回复制数据。
+在 JDK 1.4 中新加入了 NIO（New Input/Output）类，引入了一种基于通道（Channel）与缓冲区（Buffer）的 I/O 方式，它可以使用 Native 函数库直接分配堆外内存，然后通过一个存储在 Java 堆中的<font color="red">DirectByteBuffer</font> 对象作为这块内存的引用进行操作。这样能在一些场景中显著提高性能，因为避免了在 Java 堆和 Native 堆中来回复制数据。
 
 显然，本机直接内存的分配不会受到 Java 堆大小的限制，但是，既然是内存，肯定还是会受到本机总内存（包括 RAM 以及 SWAP 区或者分页文件）大小以及处理器寻址空间的限制。如果内存区域总和大于物理内存的限制，也会出现 OOM。
 
 # Code Cache
 
-简而言之， JVM 代码缓存是 JVM 将其字节码存储为本机代码的区域 。我们将可执行本机代码的每个块称为  <span style="color:red;">nmethod</span>。该  <span style="color:red;">nmethod</span> 可能是一个完整的或内联 Java 方法。
+简而言之， JVM 代码缓存是 JVM 将其字节码存储为本机代码的区域 。我们将可执行本机代码的每个块称为 <font color="red">nmethod</font>。该 <font color="red">nmethod</font> 可能是一个完整的或内联 Java 方法。
 
 实时（JIT）编译器是代码缓存区域的最大消费者。这就是为什么一些开发人员将此内存称为 JIT 代码缓存的原因。
 
-这部分代码所占用的内存空间成为  <span style="color:red;">CodeCache</span> 区域。一般情况下我们是不会关心这部分区域的且大部分开发人员对这块区域也不熟悉。如果这块区域 OOM 了，在日志里面就会看到：
- <span style="color:red;">java.lang.OutOfMemoryError code cache</span>。
+这部分代码所占用的内存空间成为 <font color="red">CodeCache</font> 区域。一般情况下我们是不会关心这部分区域的且大部分开发人员对这块区域也不熟悉。如果这块区域 OOM 了，在日志里面就会看到：
+<font color="red">java.lang.OutOfMemoryError code cache</font>。
 
 <b>诊断选项</b>
 
