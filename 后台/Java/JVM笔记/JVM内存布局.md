@@ -74,7 +74,7 @@ Java HotSpot(TM) 64-Bit Server VM (build 25.131-b11, mixed mode)
 
 ![image-20200929171645700](https://raw.githubusercontent.com/ZGYSYY/notes-resources/master/后台/Java/JVM笔记/JVM 内存布局/image-20200929171645700.png)
 
-因为新生代是由 <span style="color:red;">Eden + S0 + S1</span> 组成的，所以按照上述默认比例，如果 <span style="color:red;">eden</span> 区内存大小是 40M，那么两个 <span style="color:red;">survivor</span> 区就是 5M，整个 <span style="color:red;">young</span> 区就是 50M，然后可以算出 <span style="color:red;">Old</span> 区内存大小是 100M，堆区总大小就是 150M。
+因为新生代是由 <span color="red">Eden + S0 + S1</span> 组成的，所以按照上述默认比例，如果 <span style="color:red;">eden</span> 区内存大小是 40M，那么两个 <span style="color:red;">survivor</span> 区就是 5M，整个 <span style="color:red;">young</span> 区就是 50M，然后可以算出 <span style="color:red;">Old</span> 区内存大小是 100M，堆区总大小就是 150M。
 
 ## 4、堆溢出演示
 
