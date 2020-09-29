@@ -4,13 +4,13 @@
 
 > 本文摘抄自https://mp.weixin.qq.com/s/hOGKhhwMwL_3rIJ4egQlcg
 >
-> 并根据自己的对知识点的理解，做了相应的修改和完善，仅用于自己以后方便查阅。
+> 根据自己的对知识点的理解，做了相应的修改和完善，仅用于自己以后方便查阅。
 
 
 
 # 概念
 
-<span name="my-red">内存</span>是非常重要的系统资源，是硬盘和 CPU 的中间仓库及桥梁，承载着操作系统和应用程序的实时运行。JVM 内存布局规定了 Java 在运行过程中内存申请、分配、管理的策略，保证了 JVM 的高效稳定运行。
+内存是非常重要的系统资源，是硬盘和 CPU 的中间仓库及桥梁，承载着操作系统和应用程序的实时运行。JVM 内存布局规定了 Java 在运行过程中内存申请、分配、管理的策略，保证了 JVM 的高效稳定运行。
 
 ![image-20200929165924703](https://raw.githubusercontent.com/ZGYSYY/notes-resources/master/后台/Java/JVM笔记/JVM%20内存布局/image-20200929165924703.png)
 
@@ -255,7 +255,7 @@ public class OperandStackTest {
 1. 由于<font color="red">PermGen</font> 内存经常会溢出，引发恼人的<font color="red">java.lang.OutOfMemoryError: PermGen</font>，因此 JVM 的开发者希望这一块内存可以更灵活地被管理，不要再经常出现这样的 OOM。
 2. 移除 PermGen 可以促进<font color="red">HotSpot JVM</font> 与<font color="red">JRockit VM</font> 的融合，因为<font color="red">JRockit</font> 没有永久代。
 
-根据上面的各种原因，<span style="color:red;">PermGen</font> 最终被移除，方法区移至<font color="red">Metaspace</font>，字符串常量池移至堆区。
+根据上面的各种原因，<font color="red">PermGen</font> 最终被移除，方法区移至<font color="red">Metaspace</font>，字符串常量池移至堆区。
 
 准确来说，Perm 区中的字符串常量池被移到了堆内存中是在 Java7 之后，Java 8 时，PermGen 被元空间代替，其他内容比如类元信息、字段、静态属性、方法、常量等都移动到元空间区。比如<font color="red">java/lang/Object</font> 类元信息、静态属性 System.out、整形常量 100000 等。
 
