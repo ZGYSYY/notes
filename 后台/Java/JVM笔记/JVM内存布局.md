@@ -6,13 +6,13 @@
 
 内存是非常重要的系统资源，是硬盘和 CPU 的中间仓库及桥梁，承载着操作系统和应用程序的实时运行。JVM 内存布局规定了 Java 在运行过程中内存申请、分配、管理的策略，保证了 JVM 的高效稳定运行。
 
-![image-20200929165924703](https://raw.githubusercontent.com/ZGYSYY/notes-resources/master/后台/Java/JVM笔记/JVM 内存布局/image-20200929165924703.png)
+![image-20200929165924703](https://raw.githubusercontent.com/ZGYSYY/notes-resources/master/后台/Java/JVM笔记/JVM%20内存布局/image-20200929165924703.png)
 
 上图描述了当前比较经典的 JVM 内存布局。（堆区画小了 2333，按理来说应该是最大的区域）
 
 如果按照线程是否共享来分类的话，如下图所示：
 
-![image-20200929170426315](https://raw.githubusercontent.com/ZGYSYY/notes-resources/master/后台/Java/JVM笔记/JVM 内存布局/image-20200929170426315.png)
+![image-20200929170426315](https://raw.githubusercontent.com/ZGYSYY/notes-resources/master/后台/Java/JVM笔记/JVM%20内存布局/image-20200929170426315.png)
 
 PS：线程是否共享这点，实际上理解了每块区域的实际用处之后，就很自然而然的就记住了。不需要死记硬背。
 
@@ -46,7 +46,7 @@ Java 堆是垃圾收集器管理的主要区域，因此很多时候也被称做
 
 另外，再强调一下堆空间内存分配的大体情况。
 
-![image-20200929171443819](https://raw.githubusercontent.com/ZGYSYY/notes-resources/master/后台/Java/JVM笔记/JVM 内存布局/image-20200929171443819.png)
+![image-20200929171443819](https://raw.githubusercontent.com/ZGYSYY/notes-resources/master/后台/Java/JVM笔记/JVM%20内存布局/image-20200929171443819.png)
 
 这里可能就会有人来问了，你从哪里知道的呢？如果我想配置这个比例，要怎么修改呢？
 
@@ -113,7 +113,7 @@ PS：-XX:+HeapDumpOnOutOfMemoryError 可以让 JVM 在遇到 OOM 异常时，输
 
 看完上面对堆的介绍，我们趁热打铁再学习一下 JVM 创建一个新对象的内存分配流程。
 
-![image-20200929172341989](https://raw.githubusercontent.com/ZGYSYY/notes-resources/master/后台/Java/JVM笔记/JVM 内存布局/image-20200929172341989.png)
+![image-20200929172341989](https://raw.githubusercontent.com/ZGYSYY/notes-resources/master/后台/Java/JVM笔记/JVM%20内存布局/image-20200929172341989.png)
 
 绝大部分对象在 <span style="color:red;">Eden</span> 区生成，当 Eden 区装填满的时候，会触发 <span style="color:red;">Young Garbage Collection</span>，即 <span style="color:red;">YGC</span>。垃圾回收的时候，在 <span style="color:red;">Eden</span> 区实现清除策略，没有被引用的对象则直接回收。依然存活的对象会被移送到 <span style="color:red;">Survivor</span> 区。<span style="color:red;">Survivor</span> 区分为 so 和 s1 两块内存空间。每次 <span style="color:red;">YGC</span> 的时候，它们将存活的对象复制到未使用的那块空间，然后将当前正在使用的空间完全清除，交换两块空间的使用状态。如果 YGC 要移送的对象大于 <span style="color:red;">Survivor</span> 区容量的上限，则直接移交给老年代。一个对象也不可能永远呆在新生代，就像人到了 18 岁就会成年一样，在 JVM 中 <span style="color:red;">－XX:MaxTenuringThreshold</span> 参数就是来配置一个对象从新生代晋升到老年代的阈值。默认值是 15，可以在 <span style="color:red;">Survivor</span> 区交换 14 次之后，晋升至老年代。
 
@@ -131,7 +131,7 @@ PS：栈对应线程，栈帧对应方法。
 
 可以看出栈帧在整个 JVM 体系中的地位颇高。下面也具体介绍一下栈帧中的存储信息。
 
-![image-20200929173814739](https://raw.githubusercontent.com/ZGYSYY/notes-resources/master/后台/Java/JVM笔记/JVM 内存布局/image-20200929173814739.png)
+![image-20200929173814739](https://raw.githubusercontent.com/ZGYSYY/notes-resources/master/后台/Java/JVM笔记/JVM%20内存布局/image-20200929173814739.png)
 
 ## 1、局部变量表
 
@@ -150,7 +150,7 @@ public int test(int a, int b) {
 
 如果局部变量是 Java 的 8 种基本基本数据类型，则存在局部变量表中，如果是引用类型。如 new 出来的 String，局部变量表中存的是引用，而实例在堆中。
 
-![image-20200929174005123](https://raw.githubusercontent.com/ZGYSYY/notes-resources/master/后台/Java/JVM笔记/JVM 内存布局/image-20200929174005123.png)
+![image-20200929174005123](https://raw.githubusercontent.com/ZGYSYY/notes-resources/master/后台/Java/JVM笔记/JVM%20内存布局/image-20200929174005123.png)
 
 ## 2、操作数栈
 
@@ -199,7 +199,7 @@ public class OperandStackTest {
 
 例如，在做 <span style="color:Orange;">算术运算</span>的时候是通过操作数栈来进行的，又或者在调用其它方法的时候是通过操作数栈来进行 <span style="color:Orange;">参数传递</span>的。
 
-![image-20200929175919072](https://raw.githubusercontent.com/ZGYSYY/notes-resources/master/后台/Java/JVM笔记/JVM 内存布局/image-20200929175919072.png)
+![image-20200929175919072](https://raw.githubusercontent.com/ZGYSYY/notes-resources/master/后台/Java/JVM笔记/JVM%20内存布局/image-20200929175919072.png)
 
 索然两个栈帧作为虚拟机栈的元素是完全独立的，但是虚拟机会做出相应的优化，令两个栈帧出现一部分重叠。
 
@@ -289,7 +289,7 @@ public class OperandStackTest {
 
 <b>诊断选项</b>
 
-![image-20200929174806596](https://raw.githubusercontent.com/ZGYSYY/notes-resources/master/后台/Java/JVM笔记/JVM 内存布局/image-20200929174806596.png)
+![image-20200929174806596](https://raw.githubusercontent.com/ZGYSYY/notes-resources/master/后台/Java/JVM笔记/JVM%20内存布局/image-20200929174806596.png)
 
 >延伸阅读：Introduction to JVM Code Cache
 >https://www.baeldung.com/jvm-code-cache
