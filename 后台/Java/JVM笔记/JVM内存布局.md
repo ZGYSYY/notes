@@ -1,6 +1,8 @@
 <h1><b>JVM 内存布局</b></h1>
 
-> 本文摘抄自https://mp.weixin.qq.com/s/hOGKhhwMwL_3rIJ4egQlcg，并根据自己的对知识点的理解，做了相应的修改和完善，仅用于自己以后方便查阅。
+> 本文摘抄自https://mp.weixin.qq.com/s/hOGKhhwMwL_3rIJ4egQlcg。
+>
+> 并根据自己的对知识点的理解，做了相应的修改和完善，仅用于自己以后方便查阅。
 
 # 概念
 
