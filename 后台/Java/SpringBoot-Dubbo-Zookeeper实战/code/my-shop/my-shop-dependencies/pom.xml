@@ -21,7 +21,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <boot-dubbo.version>2.6.5</boot-dubbo.version>
+        <boot-dubbo.version>2.6.12</boot-dubbo.version>
         <boot-mapper.version>2.1.5</boot-mapper.version>
         <boot-pagehelper.version>1.2.12</boot-pagehelper.version>
         <boot-druid.version>1.1.17</boot-druid.version>
