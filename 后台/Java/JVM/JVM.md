@@ -986,4 +986,525 @@ $ jinfo -flag 11494
 
 # 类加载机制
 
+## 1、类加载机制
+
+Java 虚拟机把描述类的数据从 Class 文件加载到内存，最终形成可以被虚拟机直接使用的 Java 类型，这个过程被称作虚拟机的类加载机制。
+
+### 1.1、类的生命周期
+
+类从被加载到虚拟机内存中开始，到卸载出内存为止，它的整个生命周期包括：<span style="color:blue;font-weight:bold;">加载、验证、准备、解析、初始化、使用、卸载</span>这7 个阶段。其中其中<span style="color:blue;font-weight:bold;">验证、准备、解析</span> 3 个部分统称为连接。
+
+![image-20200827153624097](JVM.assets/007S8ZIlly1gi5eqpkg4cj312m0dyjvn.jpg)
+
+加载、验证、准备、初始化和卸载这五个阶段的顺序是确定的，类型的加载过程必须按照这种顺序按部就班地开始，而解析阶段则不一定，它在某些情况下可以在初始化阶段之后再开始，这是为了支持 Java 语言的运行时绑定特性（也称为动态绑定或晚期绑定）。
+
+<span style="color:red;font-weight:bold;">注意：</span>这里的几个阶段是按顺序开始，而不是按顺序进行或完成，因为这些阶段通常都是互相交叉地混合进行的，通常在一个阶段执行的过程中调用或激活另一个阶段。
+
+#### 1.1.1、加载
+
+查找并加载类的二进制数据。
+
+在加载阶段，虚拟机需要完成以下 3 件事情：
+
+1. 通过一个类的全限定名来获取定义此类的二进制字节流。
+2. 将这个字节流所代表的静态存储结构转化为方法区的运行时数据结构。
+3. 在内存中生成一个代表这个类的 java.lang.Class 对象，作为方法区这个类的各种数据的访问入口。
+
+![image-20200827112719502](JVM.assets/007S8ZIlly1gi57jiyydxj30ya0icdiw.jpg)
+
+#### 1.1.2、验证
+
+确保被加载的类的正确性。
+
+验证是连接阶段的第一步，这一阶段的目的是为了确保 Class 文件的字节流中包含的信息符合当前虚拟机的要求，并且不会危害虚拟机自身的安全。验证阶段大致会完成 4 个阶段的检验动作：
+
+1. 文件格式验证: 验证字节流是否符合 Class 文件格式的规范，例如：是否以 0xCAFEBABE 开头、主次版本号是否在当前虚拟机的处理范围之内、常量池中的常量是否有不被支持的类型。
+2. 元数据验证：对字节码描述的信息进行语义分析(注意：对比 javac 编译阶段的语义分析)，以保证其描述的信息符合 Java 语言规范的要求，例如：这个类是否有父类，除了 java.lang.Object 之外。
+3. 字节码验证：通过数据流和控制流分析，确定程序语义是合法的、符合逻辑的。
+4. 符号引用验证：确保解析动作能正确执行。
+
+验证阶段是非常重要的，但不是必须的，它对程序运行期没有影响，如果所引用的类经过反复验证，那么可以考虑采用 -Xverifynone 参数来关闭大部分的类验证措施，以缩短虚拟机类加载的时间。
+
+#### 1.1.3、准备
+
+为类的静态变量分配内存，并将其初始化为默认值。
+
+准备阶段是正式为类变量分配内存并设置类变量初始值的阶段，这些变量所使用的内存都将在方法区中进行分配。
+
+该阶段的注意事项：
+
+- 这时候进行内存分配的仅包括类变量（被 static 修饰的变量），而不包括实例变量，实例变量将会在对象实例化时随着对象一起分配在 Java 堆中。
+- 这里所设置的初始值通常情况下是数据类型默认的零值(如 0、0L、null、false 等)，而不是被在 Java 代码中被显式地赋予的值。
+
+比如：假设一个类变量的定义为：public static int value = 3，那么变量 value 在准备阶段过后的初始值为 0，而不是 3，因为这时候尚未开始执行任何 Java 方法，而把 value 赋值为 3 的 put static 指令是在程序编译后，存放于`类构造器()`方法之中的，所以把 value 赋值为 3 的动作将在初始化阶段才会执行。
+
+- 对基本数据类型来说，对于类变量 (static) 和全局变量，如果不显式地对其赋值而直接使用，则系统会为其赋予默认的零值，而对于局部变量来说，在使用前必须显式地为其赋值，否则编译时不通过。
+- 对于同时被 static 和 final 修饰的常量，必须在声明的时候就为其显式地赋值，否则编译时不通过，而只被 final 修饰的常量则既可以在声明时显式地为其赋值，也可以在类初始化时显式地为其赋值，总之，在使用前必须为其显式地赋值，系统不会为其赋予默认零值。
+- 对于引用数据类型 reference 来说，如数组引用、对象引用等，如果没有对其进行显式地赋值而直接使用，系统都会为其赋予默认的零值，即 null。
+- 如果在数组初始化时没有对数组中的各元素赋值，那么其中的元素将根据对应的数据类型而被赋予默认的零值。
+- 如果类字段的字段属性表中存在 ConstantValue 属性，即同时被 final 和 static 修饰，那么在准备阶段变量 value 就会被初始化为 ConstValue 属性所指定的值。假设上面的类变量 value 被定义为: public static final int value = 3，编译时Javac将会为 value 生成 ConstantValue 属性，在准备阶段虚拟机就会根据 ConstantValue 的设置将 value 赋值为 3。我们可以理解为static final 常量在编译期就将其结果放入了调用它的类的常量池中。
+
+
+#### 1.1.4、解析
+
+把类中的符号引用转换为直接引用。
+
+解析阶段是虚拟机将常量池内的符号引用替换为直接引用的过程，解析动作主要针对<span style="color:blue;font-weight:bold;">类</span>或<span style="color:blue;font-weight:bold;">接口</span>、<span style="color:blue;font-weight:bold;">字段</span>、<span style="color:blue;font-weight:bold;">类方法</span>、<span style="color:blue;font-weight:bold;">接口方法</span>、<span style="color:blue;font-weight:bold;">方法类型</span>、<span style="color:blue;font-weight:bold;">方法句柄</span>和<span style="color:blue;font-weight:bold;">调用点限定符</span> 7 类符号引用进行。符号引用就是一组符号来描述目标，可以是任何字面量。
+
+直接引用：就是直接指向目标的指针、相对偏移量或一个间接定位到目标的句柄。
+
+#### 1.1.5、初始化
+
+对类的静态变量，静态代码块执行初始化操作。
+
+初始化，为类的静态变量赋予正确的初始值，JVM 负责对类进行初始化，主要对类变量进行初始化。在 Java 中对类变量进行初始值设定有两种方式：
+
+1. 声明类变量是指定初始值。
+2. 使用静态代码块为类变量指定初始值。
+
+类初始化的步骤：
+
+1. 假如这个类还没有被加载和连接，则程序先加载并连接该类。
+2. 假如该类的直接父类还没有被初始化，则先初始化其直接父类。
+3. 假如类中有初始化语句，则系统依次执行这些初始化语句。
+
+触发类初始化的时机，只有当对类的主动使用的时候才会导致类的初始化，类的主动使用包括以下六种：
+
+1. 使用 new 关键字实例化对象的时候。
+2. 读取或设置一个类型的静态字段（被 final 修饰、已在编译期把结果放入常量池的静态字段除外）的时候。
+3. 调用一个类型的静态方法的时候。
+4. 使用 java.lang.reflect 包的方法对类型进行反射调用的时候，如果类型没有进行过初始化，则需要先触发其初始化。
+5. 当初始化类的时候，如果发现其父类还没有进行过初始化，则需要先触发其父类的初始化。
+6. 当虚拟机启动时，用户需要指定一个要执行的主类（包含 main() 方法的那个类），虚拟机会先初始化这个主类。
+
+以下几种情况不会执行类初始化：
+
+1. 通过子类引用父类的静态字段，只会触发父类的初始化，而不会触发子类的初始化。
+
+2. 定义对象数组，不会触发该类的初始化。
+
+3. 常量在编译期间会存入调用类的常量池中，本质上并没有直接引用定义常量的类，不会触
+
+    发定义常量所在的类。
+
+4. 通过类名获取 Class 对象，不会触发类的初始化。
+
+5. 通过 Class.forName 加载指定类时，如果指定参数 initialize 为 false 时，也不会触发类初
+
+    始化，其实这个参数是告诉虚拟机，是否要对类进行初始化。
+
+6. 通过 ClassLoader 默认的 loadClass 方法，也不会触发初始化动作。
+
+#### 1.1.6、使用
+
+类访问方法区内的数据结构的接口， 对象是 Heap 区的数据。
+
+#### 1.1.7、卸载
+
+Java 虚拟机将结束生命周期的几种情况：
+
+1. 执行了 System.exit() 方法。
+2. 程序正常执行结束。
+3. 程序在执行过程中遇到了异常或错误而异常终止。
+4. 由于操作系统出现错误而导致 Java 虚拟机进程终止。
+
+## 2、双亲委派模型
+
+### 2.1、简介
+
+Java 语言系统中支持以下 4 种类加载器：
+
+1. Bootstrap ClassLoader 启动类加载器。
+2. Extention ClassLoader 标准扩展类加载器。
+3. Application ClassLoader 应用类加载器。
+4. User ClassLoader 用户自定义类加载器。
+
+这四种类加载器之间，是存在着一种层次关系的，如下图：
+
+![-w704](JVM.assets/16102749464329.jpg)
+
+一般认为上一层加载器是下一层加载器的父加载器，那么，除了 BootstrapClassLoader 之外，所有的加载器都是有父加载器的。
+
+那么，所谓的双亲委派机制，指的就是：当一个类加载器收到了类加载的请求的时候，他不会直接去加载指定的类，而是把这个请求委托给自己的父加载器去加载。只有父加载器无法加载这个类的时候，才会由当前这个加载器来负责类的加载。
+
+那么，什么情况下父加载器会无法加载某一个类呢？
+
+其实，Java 中提供的这四种类型的加载器，是有各自的职责的：
+
+- Bootstrap ClassLoader ，主要负责加载 Java 核心类库，%JRE_HOME%\lib 下的 rt.jar、resources.jar、charsets.jar 和 class 等。
+- Extention ClassLoader，主要负责加载目录 %JRE_HOME%\lib\ext 目录下的 jar 包和 class 文件。
+- Application ClassLoader ，主要负责加载当前应用的 classpath 下的所有类。
+- User ClassLoader ， 用户自定义的类加载器,可加载指定路径的 class 文件。
+
+那么也就是说，一个用户自定义的类，如 com.hollis.ClassHollis 是无论如何也不会被 Bootstrap 和 Extention 加载器加载的。
+
+### 2.2、为什么需要双亲委派？
+
+如上面我们提到的，因为类加载器之间有严格的层次关系，那么也就使得 Java 类也随之具备了层次关系。
+
+或者说这种层次关系是优先级。
+
+比如一个定义在 java.lang 包下的类，因为它被存放在 rt.jar 之中，所以在被加载过程中，会被一直委托到 Bootstrap ClassLoader，最终由 Bootstrap ClassLoader 所加载。
+
+而一个用户自定义的 com.hollis.ClassHollis 类，他也会被一直委托到 Bootstrap ClassLoader，但是因为 Bootstrap ClassLoader 不负责加载该类，那么会在由 Extention ClassLoader 尝试加载，而 Extention ClassLoader 也不负责这个类的加载，最终才会被Application ClassLoader 加载。
+
+这种机制有几个好处。
+
+首先，通过委派的方式，可以避免类的重复加载，当父加载器已经加载过某一个类时，子加载器就不会再重新加载这个类。
+
+另外，通过双亲委派的方式，还保证了安全性。因为 Bootstrap ClassLoader 在加载的时候，只会加载 JAVA_HOME 中的 jar 包里面的类，如 java.lang.Integer，那么这个类是不会被随意替换的，除非有人跑到你的机器上， 破坏你的 JDK。
+
+那么，就可以避免有人自定义一个有破坏功能的 java.lang.Integer 被加载。这样可以有效的防止核心 Java API 被篡改。
+
+### 2.3、"父子加载器"之间的关系是继承吗？
+
+很多人看到父加载器、子加载器这样的名字，就会认为 Java 中的类加载器之间存在着继承关系。
+
+甚至网上很多文章也会有类似的错误观点。
+
+这里需要明确一下，双亲委派模型中，类加载器之间的父子关系一般不会以继承（Inheritance）的关系来实现，而是都使用组合（Composition）关系来复用父加载器的代码的。
+
+如下为 ClassLoader 中父加载器的定义：
+
+```java
+public abstract class ClassLoader {
+    // The parent class loader for delegation
+    private final ClassLoader parent;
+}
+```
+
+### 2.4、双亲委派是怎么实现的？
+
+双亲委派模型对于保证 Java 程序的稳定运作很重要，但它的实现并不复杂。
+
+实现双亲委派的代码都集中在 java.lang.ClassLoader的loadClass() 方法之中：
+
+```java
+protected Class<?> loadClass(String name, boolean resolve)
+        throws ClassNotFoundException
+    {
+        synchronized (getClassLoadingLock(name)) {
+            // First, check if the class has already been loaded
+            Class<?> c = findLoadedClass(name);
+            if (c == null) {
+                long t0 = System.nanoTime();
+                try {
+                    if (parent != null) {
+                        c = parent.loadClass(name, false);
+                    } else {
+                        c = findBootstrapClassOrNull(name);
+                    }
+                } catch (ClassNotFoundException e) {
+                    // ClassNotFoundException thrown if class not found
+                    // from the non-null parent class loader
+                }
+
+                if (c == null) {
+                    // If still not found, then invoke findClass in order
+                    // to find the class.
+                    long t1 = System.nanoTime();
+                    c = findClass(name);
+
+                    // this is the defining class loader; record the stats
+                    sun.misc.PerfCounter.getParentDelegationTime().addTime(t1 - t0);
+                    sun.misc.PerfCounter.getFindClassTime().addElapsedTimeFrom(t1);
+                    sun.misc.PerfCounter.getFindClasses().increment();
+                }
+            }
+            if (resolve) {
+                resolveClass(c);
+            }
+            return c;
+        }
+    }
+```
+
+代码不难理解，主要就是以下几个步骤：
+
+1. 先检查类是否已经被加载过。
+2. 若没有加载则调用父加载器的 loadClass() 方法进行加载。
+3. 若父加载器为空则默认使用启动类加载器作为父加载器。
+4. 如果父类加载失败，抛出 ClassNotFoundException 异常后，再调用自己的 findClass() 方法进行加载。
+
+## 3、双亲委派模型破坏
+
+### 3.1、如何主动破坏双亲委派机制？
+
+知道了双亲委派模型的实现，那么想要破坏双亲委派机制就很简单了。
+
+因为他的双亲委派过程都是在 loadClass 方法中实现的，那么想要破坏这种机制，那么就自定义一个类加载器，重写其中的loadClass 方法，使其不进行双亲委派即可。
+
+### 3.2、loadClass（）、findClass（）、defineClass（）区别
+
+ClassLoader 中和类加载有关的方法有很多，前面提到了 loadClass，除此之外，还有 findClass 和 defineClass 等，那么这几个方法有什么区别呢？
+
+- loadClass()：就是主要进行类加载的方法，默认的双亲委派机制就实现在这个方法中。
+- findClass()：根据名称或位置加载 .class 字节码。
+- definclass()：把字节码转化为 Class 对象。
+
+这里面需要展开讲一下 loadClass 和 findClass，我们前面说过，当我们想要自定义一个类加载器的时候，并且像破坏双亲委派原则时，我们会重写 loadClass 方法。
+
+那么，如果我们想定义一个类加载器，但是不想破坏双亲委派模型的时候呢？
+
+这时候，就可以继承 ClassLoader，并且重写 findClass方法。findClass() 方法是 JDK1.2 之后的 ClassLoader 新添加的一个方法。代码如下：
+
+```java
+ /**
+ * @since  1.2
+ */
+protected Class<?> findClass(String name) throws ClassNotFoundException {
+    throw new ClassNotFoundException(name);
+}
+```
+
+这个方法只抛出了一个异常，没有默认实现。
+
+JDK1.2 之后已不再提倡用户直接覆盖 loadClass() 方法，而是建议把自己的类加载逻辑实现到 findClass() 方法中。
+
+因为在 loadClass() 方法的逻辑里，如果父类加载器加载失败，则会调用自己的 findClass() 方法来完成加载。
+
+所以，如果你想定义一个自己的类加载器，并且要遵守双亲委派模型，那么可以继承 ClassLoader，并且在 findClass 中实现你自己的加载逻辑即可。
+
+### 3.3、双亲委派被破坏的例子
+
+双亲委派机制的破坏不是什么稀奇的事情，很多框架、容器等都会破坏这种机制来实现某些功能。
+
+1. 在双亲委派出现之前。
+
+    由于双亲委派模型是在 JDK1.2 之后才被引入的，而在这之前已经有用户自定义类加载器在用了。所以，这些是没有遵守双亲委派原则的。
+
+2. JNDI、JDBC等需要加载SPI接口实现类的情况。
+
+3. 为了实现热插拔热部署工具。
+
+    为了让代码动态生效而无需重启，实现方式时把模块连同类加载器一起换掉就实现了代码的热替换。
+
+4. tomcat 等 web 容器的出现。
+
+5. OSGI、Jigsaw 等模块化技术的应用。
+
+### 3.4、JDBC 为什么要破坏双亲委派模型
+
+我们日常开发中，大多数时候会通过 API 的方式调用 Java 提供的那些基础类，这些基础类时被 Bootstrap 加载的。
+
+但是，调用方式除了 API 之外，还有一种 SPI 的方式。
+
+如典型的 JDBC 服务，我们通常通过以下方式创建数据库连接：
+
+```java
+Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/mysql", "root", "1234");
+```
+
+在以上代码执行之前，DriverManager 会先被类加载器加载，因为 java.sql.DriverManager 类是位于 rt.jar 下面的 ，所以他会被根加载器加载。
+
+类加载时，会执行该类的静态方法。其中有一段关键的代码是：
+
+```java
+ServiceLoader<Driver> loadedDrivers = ServiceLoader.load(Driver.class);
+```
+
+这段代码，会尝试加载classpath下面的所有实现了 Driver 接口的实现类。
+
+那么，问题就来了。
+
+DriverManager 是被根加载器加载的，那么在加载时遇到以上代码，会尝试加载所有 Driver 的实现类，但是这些实现类基本都是第三方提供的，根据双亲委派原则，第三方的类不能被根加载器加载。
+
+那么，怎么解决这个问题呢？
+
+于是，就在 JDBC 中通过引入 ThreadContextClassLoader（线程上下文加载器，默认情况下是 AppClassLoader）的方式破坏了双亲委派原则。
+
+我们深入到 ServiceLoader.load 方法就可以看到：
+
+```java
+public static <S> ServiceLoader<S> load(Class<S> service) {
+    ClassLoader cl = Thread.currentThread().getContextClassLoader();
+    return ServiceLoader.load(service, cl);
+}
+```
+
+第一行，获取当前线程的线程上下⽂类加载器 AppClassLoader，⽤于加载 classpath 中的具体实现类。
+
+### 3.5、Tomcat 为什么要破坏双亲委派模型
+
+我们知道，Tomcat 是 web 容器，那么一个 web 容器可能需要部署多个应用程序。
+
+不同的应用程序可能会依赖同一个第三方类库的不同版本，但是不同版本的类库中某一个类的全路径名可能是一样的。
+
+如多个应用都要依赖 hollis.jar，但是 A 应用需要依赖 1.0.0 版本，但是 B 应用需要依赖 1.0.1 版本。这两个版本中都有一个类是 com.hollis.Test.class。
+
+如果采用默认的双亲委派类加载机制，那么是无法加载多个相同的类。
+
+所以，Tomcat 破坏双亲委派原则，提供隔离的机制，为每个 web 容器单独提供一个 WebAppClassLoader 加载器。
+
+Tomcat 的类加载机制：为了实现隔离性，优先加载 Web 应用自己定义的类，所以没有遵照双亲委派的约定，每一个应用自己的类加载器——WebAppClassLoader 负责加载本身的目录下的class文件，加载不到时再交给 CommonClassLoader 加载，这和双亲委派刚好相反。
+
 # Java 四种引用
+
+## 1、强引用
+
+Java 中默认声明的就是强引用，比如：
+
+```java
+Object obj = new Object(); //只要obj还指向Object对象，Object对象就不会被回收
+obj = null;  //手动置null
+```
+
+只要强引用存在，垃圾回收器将永远不会回收被引用的对象，哪怕内存不足时，JVM 也会直接抛出 OutOfMemoryError，不会去回收。如果想中断强引用与对象之间的联系，可以显示的将强引用赋值为 null，这样一来，JVM 就可以适时的回收对象了。
+
+## 2、软引用
+
+软引用是用来描述一些非必需但仍有用的对象。在内存足够的时候，软引用对象不会被回收，只有在内存不足时，系统则会回收软引用对象，如果回收了软引用对象之后仍然没有足够的内存，才会抛出内存溢出异常。这种特性常常被用来实现缓存技术，比如网页缓存，图片缓存等。
+在 JDK1.2 之后，用 java.lang.ref.SoftReference 类来表示软引用。
+
+下面以一个例子来进一步说明强引用和软引用的区别：
+在运行下面的Java代码之前，需要先配置参数 -Xms2M -Xmx3M，将 JVM 的初始内存设为 2M，最大可用内存为 3M。
+
+首先先来测试一下强引用，在限制了 JVM 内存的前提下，下面的代码运行正常，代码如下：
+
+```java
+public class TestOOM {
+	
+	public static void main(String[] args) {
+		 testStrongReference();
+	}
+	private static void testStrongReference() {
+		// 当 new byte为 1M 时，程序运行正常
+		byte[] buff = new byte[1024 * 1024 * 1];
+	}
+}
+```
+
+但是如果我们将
+
+```java
+byte[] buff = new byte[1024 * 1024 * 1];
+```
+
+替换为创建一个大小为 2M 的字节数组，代码如下：
+
+```java
+byte[] buff = new byte[1024 * 1024 * 2];
+```
+
+则内存不够使用，程序直接报错，强引用并不会被回收，如图所示：
+
+![img](JVM.assets/662236-20180922194052676-1646914311.png)
+
+接着来看一下软引用会有什么不一样，在下面的示例中连续创建了 10 个大小为 1M 的字节数组，并赋值给了软引用，然后循环遍历将这些对象打印出来。代码如下：
+
+```java
+public class TestOOM {
+	private static List<Object> list = new ArrayList<>();
+	public static void main(String[] args) {
+	     testSoftReference();
+	}
+	private static void testSoftReference() {
+		for (int i = 0; i < 10; i++) {
+			byte[] buff = new byte[1024 * 1024];
+			SoftReference<byte[]> sr = new SoftReference<>(buff);
+			list.add(sr);
+		}
+		
+		System.gc(); //主动通知垃圾回收
+		
+		for(int i=0; i < list.size(); i++){
+			Object obj = ((SoftReference) list.get(i)).get();
+			System.out.println(obj);
+		}
+		
+	}
+	
+}
+```
+
+打印结果，如图所示：
+
+![img](JVM.assets/662236-20180922194016719-117632363.png)
+
+我们发现无论循环创建多少个软引用对象，打印结果总是只有最后一个对象被保留，其他的 obj 全都被置空回收了。
+这里就说明了在内存不足的情况下，软引用将会被自动回收。
+值得注意的一点 , 即使有 byte[] buff 引用指向对象, 且 buff 是一个 strong reference, 但是 SoftReference sr 指向的对象仍然被回收了，这是因为 Java 的编译器发现了在之后的代码中, buff 已经没有被使用了, 所以自动进行了优化。
+如果我们将上面示例稍微修改一下，代码如下：
+
+```java
+private static void testSoftReference() {
+    byte[] buff = null;
+
+    for (int i = 0; i < 10; i++) {
+        buff = new byte[1024 * 1024];
+        SoftReference<byte[]> sr = new SoftReference<>(buff);
+        list.add(sr);
+    }
+
+    System.gc(); //主动通知垃圾回收
+
+    for(int i=0; i < list.size(); i++){
+        Object obj = ((SoftReference) list.get(i)).get();
+        System.out.println(obj);
+    }
+
+    System.out.println("buff: " + buff.toString());
+}
+```
+
+则 buff 会因为强引用的存在，而无法被垃圾回收，从而抛出 OOM 的错误。如图所示：
+
+![img](JVM.assets/662236-20180922194030314-105853688.png)
+
+如果一个对象惟一剩下的引用是软引用，那么该对象是软可及的（softly reachable）。垃圾收集器并不像其收集弱可及的对象一样尽量地收集软可及的对象，相反，它只在真正 “需要” 内存时才收集软可及的对象。
+
+## 3、弱引用
+
+弱引用的引用强度比软引用要更弱一些，无论内存是否足够，只要 JVM 开始进行垃圾回收，那些被弱引用关联的对象都会被回收。在 JDK1.2 之后，用 java.lang.ref.WeakReference 来表示弱引用。
+我们以与软引用同样的方式来测试一下弱引用，代码如下：
+
+```java
+private static void testWeakReference() {
+    for (int i = 0; i < 10; i++) {
+        byte[] buff = new byte[1024 * 1024];
+        WeakReference<byte[]> sr = new WeakReference<>(buff);
+        list.add(sr);
+    }
+
+    System.gc(); //主动通知垃圾回收
+
+    for(int i=0; i < list.size(); i++){
+        Object obj = ((WeakReference) list.get(i)).get();
+        System.out.println(obj);
+    }
+}
+```
+
+打印结果，如图所示：
+
+![img](JVM.assets/662236-20180922194112309-477100844.png)
+
+可以发现所有被弱引用关联的对象都被垃圾回收了。
+
+## 4、虚引用
+
+虚引用是最弱的一种引用关系，如果一个对象仅持有虚引用，那么它就和没有任何引用一样，它随时可能会被回收，在 JDK1.2 之后，用 PhantomReference 类来表示，通过查看这个类的源码，发现它只有一个构造函数和一个 get() 方法，而且它的 get() 方法仅仅是返回一个 null，也就是说将永远无法通过虚引用来获取对象，虚引用必须要和 ReferenceQueue 引用队列一起使用。源码如下：
+
+```java
+public class PhantomReference<T> extends Reference<T> {
+    /**
+     * Returns this reference object's referent.  Because the referent of a
+     * phantom reference is always inaccessible, this method always returns
+     * <code>null</code>.
+     *
+     * @return  <code>null</code>
+     */
+    public T get() {
+        return null;
+    }
+    public PhantomReference(T referent, ReferenceQueue<? super T> q) {
+        super(referent, q);
+    }
+}
+```
+
+## 5、引用队列（ReferenceQueue）
+
+引用队列可以与软引用、弱引用以及虚引用一起配合使用，当垃圾回收器准备回收一个对象时，如果发现它还有引用，那么就会在回收对象之前，把这个引用加入到与之关联的引用队列中去。程序可以通过判断引用队列中是否已经加入了引用，来判断被引用的对象是否将要被垃圾回收，这样就可以在对象被回收之前采取一些必要的措施。
+
+与软引用、弱引用不同，虚引用必须和引用队列一起使用。
