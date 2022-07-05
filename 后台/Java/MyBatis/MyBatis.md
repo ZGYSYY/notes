@@ -19,7 +19,7 @@
     b. 使用 Mapper 代理方式。
 
 2. 数据处理层：负责具体的 SQL 查找、SQL 解析、SQL 执行和执行结果映射处理等。它主要的目的是根据调用的请求完成一次数据库操作。
-3. 基础支撑层：负责最基础的功能支撑，包括连接管理、事务管理、配置加载和缓存处理，这些都是共用的东西，将它们抽取出来作为最基础的组件。为上层的数据处理层提供最基础的支撑。
+3. 框架支撑层：负责最基础的功能支撑，包括连接管理、事务管理、配置加载和缓存处理，这些都是共用的东西，将它们抽取出来作为最基础的组件。为上层的数据处理层提供最基础的支撑。
 
 ## 2、主要构建及其相互关系
 
@@ -32,7 +32,7 @@
 | ResultSetHandler | 负责将 JDBC 返回的 ResultSet 结果集对象转换成 List 类型的集合。 |
 | TypeHandler      | 负责 JAVA 数据类型和 JDBC 数据类型之间的映射和转换。         |
 | MappedStatement  | MappedStatement 维护了一条 <select\|update\|delete\|insert> 节点的封装。 |
-| SqlSource        | 负责根据用户传递的 parameterObject，动态生成 SQL 语句，将信息封装到 BoundSql 对象中，并放回。 |
+| SqlSource        | 负责根据用户传递的 parameterObject，动态生成 SQL 语句，将信息封装到 BoundSql 对象中，并反回。 |
 | BoundSql         | 表示动态生成的 SQL 语句以及相应的参数信息。                  |
 
 ![img](MyBatis.assets/webp)
@@ -119,7 +119,7 @@ public SqlSessionFactory build(InputStream inputStream, String environment, Prop
 
 MyBatis 在初始化的时候，会将 MyBatis 的配置信息全部加载到内存中，使用`org.apache.ibatis.session.Configuration` 实例来维护。
 
-##### 4.1.1.1、配置文件解析。
+##### 4.1.1.1、配置文件解析
 
 ###### 4.1.1.1.1、Configuration 对象进行介绍
 
@@ -223,9 +223,8 @@ public SqlSessionFactory build(Configuration config) {
 #### 4.1.2、源码剖析-执⾏SQL流程
 
 先简单介绍 SqlSession ：
-SqlSession 是⼀个接⼝，它有两个实现类： DefaultSqlSession (默认)和 SqlSessionManager (弃⽤，不做介绍)
-SqlSession 是 MyBatis 中⽤于和数据库交互的顶层类，通常将它与 ThreadLocal 绑定，⼀个会话使⽤⼀
-个 SqlSession,并且在使⽤完毕后需要 close。
+SqlSession 是⼀个接⼝，它有两个实现类： DefaultSqlSession (默认)和 SqlSessionManager (弃⽤，不做介绍)。
+SqlSession 是 MyBatis 中⽤于和数据库交互的顶层类，通常将它与 ThreadLocal 绑定，⼀个会话使⽤⼀个 SqlSession,并且在使⽤完毕后需要 close。
 
 ```java
 public class DefaultSqlSession implements SqlSession {
@@ -496,7 +495,7 @@ public void setParameters(PreparedStatement ps) {
                     MetaObject metaObject = configuration.newMetaObject(parameterObject);
                     value = metaObject.getValue(propertyName);
                 }
-                // 每⼀个 Mapping都有⼀个 TypeHandler，根据 TypeHandler 来对 preparedStatement 进⾏设置参数
+                // 每⼀个 Mapping 都有⼀个 TypeHandler，根据 TypeHandler 来对 preparedStatement 进⾏设置参数
                 TypeHandler typeHandler = parameterMapping.getTypeHandler();
                 JdbcType jdbcType = parameterMapping.getJdbcType();
                 if (value == null && jdbcType == null) {
