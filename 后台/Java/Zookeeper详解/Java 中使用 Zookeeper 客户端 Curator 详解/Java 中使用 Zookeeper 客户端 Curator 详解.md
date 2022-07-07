@@ -1,52 +1,6 @@
-<center><h1>Java 中使用 Zookeeper 客户端 Curator 详解&emsp;</h1></center> 
+[TOC]
 
-
-
-# 目录
-
-* [简介](#简介)
-* [Curator的基本Api](#curator的基本api)
-  * [创建会话](#创建会话)
-  * [数据节点基本操作（增删改查）](#数据节点基本操作增删改查)
-  * [事务](#事务)
-  * [异步接口](#异步接口)
-* [Curator 高级特性](#curator-高级特性)
-  * [缓存](#缓存)
-    * [Path Cache](#path-cache)
-    * [Node Cache](#node-cache)
-    * [Tree Cache](#tree-cache)
-    
-  * [Leader选举](#leader选举)
-    * [LeaderLatch](#leaderlatch)
-    * [LeaderSelector](#leaderselector)
-    
-  * [分布式锁](#分布式锁)
-    
-    * [可重入共享锁 Shared Reentrant Lock](#可重入共享锁-shared-reentrant-lock)
-    * [不可重入共享锁 Shared Lock](#不可重入共享锁-shared-lock)
-    * [可重入读写锁 Shared Reentrant Read Write Lock](#可重入读写锁-Shared-Reentrant-Read-Write-Lock)
-    * [信号量 Shared Semaphore](#信号量-Shared-Semaphore)
-    * [多共享锁对象 — Multi Shared Lock](#多共享锁对象-Multi-Shared-Lock)
-    * [分布式int计数器(SharedCount)](#分布式int计数器sharedcount)
-    * [分布式long计数器(DistributedAtomicLong)](#分布式long计数器DistributedAtomicLong)
-  
-  * [分布式队列](#分布式队列)
-    
-    * [分布式队列(DistributedQueue)](#分布式队列DistributedQueue)
-    * [带Id的分布式队列(DistributedIdQueue)](#带Id的分布式队列DistributedIdQueue)
-    
-    * [优先级分布式队列(DistributedPriorityQueue)](#优先级分布式队列DistributedPriorityQueue)
-    * [分布式延迟队列(DistributedDelayQueue)](#分布式延迟队列DistributedDelayQueue)
-    * [基于JDK的分布式队列(SimpleDistributedQueue)](#基于JDK的分布式队列SimpleDistributedQueue)
-    
-  * [分布式栅栏(屏障)——Barrier](#分布式栅栏屏障barrier)
-  
-    * [DistributedBarrier](#DistributedBarrier)
-    * [双栅栏(DistributedDoubleBarrier)](#双栅栏DistributedDoubleBarrier)
-  
-* [结束](#结束)
-
-# 简介
+## 简介
 
 因为最近项目需要使用Zookeeper这个中间件，提前了解一下它的客户端Curator的使用。
 
@@ -1681,6 +1635,18 @@ public class Test14App {
 新建一个`InterProcessMultiLock`， 包含一个重入锁和一个非重入锁。 调用`acquire()`后可以看到线程同时拥有了这两个锁。 调用`release()`看到这两个锁都被释放了。
 
 **最后再重申一次， 强烈推荐使用ConnectionStateListener监控连接的状态，当连接状态为LOST，锁将会丢失。**
+
+### 公平锁和非公平锁
+
+#### 公平锁
+
+公平锁的实现原理，就是利用<span style="color:blue">临时顺序节点</span>的特性。每个客户端在加锁时，都会在指定的一个持久节点下创建一个临时顺序节点，加锁是否成功的依据是，判断这些临时顺序节点哪个的顺序号最小，最小的就是加锁成功。当前加锁成功的后面一个临时顺序节点利用 Watch 机制，监听上一个被成功加锁的节点，如果被成功加锁的节点被删除掉，那么后一个节点就开始尝试加锁。就这样一直循环前面的步骤。
+
+#### 非公平锁
+
+非公平锁的实现原理，就是利用<span style="color:blue">临时节点</span>的特性。节点创建成功就是加锁成功，创建失败就是加锁失败，利用 Watch 机制，创建失败的客户端去监听创建成功的节点，当节点被删除时，通知相应的客户端进行加锁操作。
+
+非公平锁有个问题，就是羊群效应。由于 Watch 机制，当加锁成功的节点被删除时，那些监听该节点的客户端就会去争抢这个加锁的机会，导致加锁效率不高，浪费不必要的资源。
 
 ## 分布式计数器
 

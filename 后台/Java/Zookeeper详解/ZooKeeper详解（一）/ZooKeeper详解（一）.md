@@ -104,7 +104,7 @@ ZooKeeper 客户端创建 Watcher 的实例对象：
 
 **③客户端回调 Watcher**
 
-客户端在响应客户端 Watcher 注册以后，会发送 WathcerEvent 事件。作为客户端有对应的回调函数接受这个消息。
+服务端在响应客户端 Watcher 注册以后，会发送 WathcerEvent 事件。作为客户端有对应的回调函数接受这个消息。
 
 这里会通过 readResponse 方法统一处理：
 
