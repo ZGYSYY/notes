@@ -528,3 +528,81 @@ git pull也失败了，原因是没有指定本地dev分支与远程origin/dev�
 首先，可以试图用git push origin branch-name推送自己的修改.
 如果推送失败，则因为远程分支比你的本地更新早，需要先用git pull试图合并。
 如果合并有冲突，则需要解决冲突，并在本地提交。再用git push origin branch-name推送。  
+
+## 9、gitignore文件失效解决办法
+
+```bash
+git rm -r --cached .
+git add .
+git commit -m 'update .gitignore'
+```
+
+## 10、将本地文件和与远程git仓库关联
+
+```bash
+git init
+git add README.md
+git commit -m "描述"
+git branch -M 分支名
+git remote add origin 远程git仓库地址
+git push -u origin 分支名
+```
+
+# Git 多平台换行符问题
+
+```bash
+# 提交时转换为LF，检出时转换为CRLF
+git config --global core.autocrlf true
+
+# 提交时转换为LF，检出时不转换
+git config --global core.autocrlf input
+
+# 提交检出均不转换
+git config --global core.autocrlf false
+```
+
+# Git 设置代理
+
+## 1、http 和 https 协议
+
+```bash
+# 设置全局代理
+
+## http
+git config --global https.proxy http://127.0.0.1:1080
+
+## https
+git config --global https.proxy https://127.0.0.1:1080
+
+## 使用 socks5 代理的 例如ss，ssr 1080 是 windows 下 ss 的默认代理端口,mac 下不同，或者有自定义的，根据自己的改
+git config --global http.proxy socks5://127.0.0.1:1080
+git config --global https.proxy socks5://127.0.0.1:1080
+
+# 取消全局代理
+git config --global --unset http.proxy
+git config --global --unset https.proxy
+
+# 只对 github.com 使用代理，其他仓库不走代理
+git config --global http.https://github.com.proxy socks5://127.0.0.1:1080
+git config --global https.https://github.com.proxy socks5://127.0.0.1:1080
+
+#取消 github 代理
+git config --global --unset http.https://github.com.proxy
+git config --global --unset https.https://github.com.proxy
+```
+
+## 2、ssh 协议
+
+对于使用 git@ 协议的，可以配置 socks5 代理，在 `~/.ssh/config` 文件后面添加如下几行，没有可以新建一个：
+
+```tex
+# socks5
+Host github.com
+User git
+ProxyCommand connect -S 127.0.0.1:1080 %h %p
+
+# http 和 https
+Host github.com
+User git
+ProxyCommand connect -H 127.0.0.1:1080 %h %p
+```
