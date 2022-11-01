@@ -6,7 +6,7 @@
 
 Activiti 项目是基于 Apache License 许可的开源项目。
 
-Activiti 是一个用 Java 编写的开源工作流引擎。并且遵循 BPNM2.0 标准。
+Activiti 是一个用 Java 编写的开源工作流引擎。并且遵循 BPMN2.0 标准。
 
 Activiti7 能轻易的与 SpringBoot 项目进行整合。
 
