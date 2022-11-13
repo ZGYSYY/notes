@@ -223,36 +223,85 @@ bin/mysqld_safe --user=mysql &
 
 ### 4.4、让 MySql 开机自动启动
 
-暂时还没有找到方法。
+在目录 `/usr/local/mysql/bin` 下新建 `mysql_start.sh` 启动脚本文件，内容如下
+
+```tex
+#!/bin/bash
+/usr/local/mysql/bin/mysqld_safe --user=mysql &
+```
+
+将 `mysql_start.sh` 文件设置为可执行文件
+
+```bash
+chmod +x /usr/local/mysql/bin/mysql_start.sh
+```
+
+在目录 `/etc/systemd/system` 下新建 `mysql.service` 文件，内容如下
+
+```tex
+[Unit]
+Description=MySQL Server
+After=network.service
+
+[Service]
+Type=forking
+TimeoutSec=0
+Restart=on-failure
+RestartSec=10
+ExecStart=/usr/local/mysql/bin/mysql_start.sh
+
+[Install]
+WantedBy=multi-user.target
+```
+
+重新读取 systemctl 服务
+
+```bash
+systemctl daemon-reload
+```
+
+启动 mysql.service 服务
+
+```bash
+# 启动服务
+systemctl start mysql.service
+# 查看状态
+systemctl status mysql.service
+# 将 mysql.service 设置为开机自动启动
+systemctl enable mysql.service
+```
+
+![image-20221113140301832](Mysql%20%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B.assets/image-20221113140301832.png)
+
+出现上图效果则说明，已经设置成功，然后就可以重新启动服务器，看看 MySQL 是否配置成功。
 
 ## 5、常见问题
 
-1. MySql 默认的数据文件在安装目录下的 `data` 目录中，在进行初始化化目录的时候会自动创建该目录。
+### 5.1、MySql 默认的数据文件在安装目录下的 `data` 目录中，在进行初始化化目录的时候会自动创建该目录
 
-2. 无法使用 Navicat 连接数据库，提示 `caching_sha2_password could not be loaded` 错误。
+### 5.2、无法使用 Navicat 连接数据库，提示 `caching_sha2_password could not be loaded` 错误
 
-    这是因为在 **MySQL-8.0.3** 前，MySql 默认用的是 **mysql_native_password** 密码认证方式，这种方式是使用 **SHA1** 来实现的，存在的问题就是，如果密码相同，生成的密文就是相同的。
+这是因为在 **MySQL-8.0.3** 前，MySql 默认用的是 **mysql_native_password** 密码认证方式，这种方式是单纯使用 **SHA1** 来实现的，存在的问题就是，如果密码相同，生成的密文就是相同的。
 
-    在之后的版本后，为了解决上面的问题，MySql 默认用的是 **caching_sha2_password** 密码认证方式，这种方式使用 **caching_sha2_password** 密码认证方式 来实现的，这样就算密码相同，生成的密文也不相同，从而增加了安全性。
+在之后的版本后，为了解决上面的问题，MySql 默认用的是 **caching_sha2_password** 密码认证方式，这种方式使用 **SHA256 + 随机盐** 密码认证方式 来实现的，这样就算密码相同，生成的密文也不相同，从而增加了安全性。
 
-    为什么 Navicat 提示 `caching_sha2_password could not be loaded` 错误，是因为一些版本比较老的 Navicat 内置的 MySql 驱动还不支持 **caching_sha2_password** 密码认证方式，所以解决办法是，要么升级客户端，要么将 MySQL 里面相应账号的 密码认证方式改为 **mysql_native_password**。步骤如下
+为什么 Navicat 提示 `caching_sha2_password could not be loaded` 错误，是因为一些版本比较老的 Navicat 内置的 MySql 驱动还不支持 **caching_sha2_password** 密码认证方式，所以解决办法是，要么升级客户端，要么将 MySQL 里面相应账号的 密码认证方式改为 **mysql_native_password**。步骤如下
 
-    ```bash
-    # 切换到 mysql 库
-    use mysql;
-    # 查看用户的密码认证方式
-    SELECT Host,User,plugin FROM user;
-    ```
+```bash
+# 切换到 mysql 库
+use mysql;
+# 查看用户的密码认证方式
+SELECT Host,User,plugin FROM user;
+```
 
-    ![image-20221111133935626](Mysql%20%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B.assets/image-20221111133935626.png)
+![image-20221111133935626](Mysql%20%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B.assets/image-20221111133935626.png)
 
-    ```bash
-    # 修改 root 用户的密码认证方式为 mysql_native_password，并重新设置密码
-    ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY '新密码';
-    # 将用户数据和权限数据刷新到内存中
-    FLUSH PRIVILEGES;
-    # 验证用户的密码认证方式是否生效
-    SELECT Host,User,plugin FROM user;
-    ```
+```bash
+# 修改 root 用户的密码认证方式为 mysql_native_password，并重新设置密码
+ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY '新密码';
+# 将用户数据和权限数据刷新到内存中
+FLUSH PRIVILEGES;
+# 验证用户的密码认证方式是否生效
+SELECT Host,User,plugin FROM user;
+```
 
-    
