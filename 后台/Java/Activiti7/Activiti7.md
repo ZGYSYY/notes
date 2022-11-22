@@ -237,32 +237,73 @@ public class Activiti7LabApplication {
 
 ## 3、25 张表的含义解释
 
-- ACT_EVT_LOG
+- ACT_EVT_LOG（Activiti 日志记录表）
 
-- ACT_GE_BYTEARRAY
-- ACT_GE_PROPERTY
-- ACT_HI_ACTINST
+- ACT_GE_BYTEARRAY（资源表）
+
+    流程部署一次，所设置的相关资源会存入到该表中。
+
+- ACT_GE_PROPERTY（历史资源表）
+
+- ACT_HI_ACTINST（历史流程实例步骤表）
+
+    记录了流程实例的每个步骤相关信息。
+
 - ACT_HI_ATTACHMENT
+
 - ACT_HI_COMMENT
+
 - ACT_HI_DETAIL
-- ACT_HI_IDENTITYLINK
-- ACT_HI_PROCINST
-- ACT_HI_TASKINST
-- ACT_HI_VARINST
+
+- ACT_HI_IDENTITYLINK（历史流程实例参与人记录表）
+
+- ACT_HI_PROCINST（历史流程实例表）
+
+- ACT_HI_TASKINST（历史任务表）
+
+- ACT_HI_VARINST（历史参数表）
+
 - ACT_PROCDEF_INFO
-- ACT_RE_DEPLOYMENT
+
+- ACT_RE_DEPLOYMENT（流程部署表）
+
+    流程部署一次，生成一条记录。
+
 - ACT_RE_MODEL
-- ACT_RE_PROCDEF
+
+- ACT_RE_PROCDEF（流程定义表）
+
+    流程部署一次，生成一条记录。
+
+    当基于一个 BPMN 文件，进行多次流程部署时，该表的 `KEY_` 字段不会变，`VERSION_` 字段会加一。
+
 - ACT_RU_DEADLETTER_JOB
+
 - ACT_RU_EVENT_SUBSCR
-- ACT_RU_EXECUTION
-- ACT_RU_IDENTITYLINK
+
+- ACT_RU_EXECUTION（流程实例表）
+
+    流程实例在运行过程中，会根据流程的执行进度，在该表中生成相关节点的记录。
+
+    在启动流程实例时会在该表中生成 2 条记录，第 1 条是`启动`节点，第 2 条才是`任务`节点。
+
+- ACT_RU_IDENTITYLINK（流程实例参与人记录表）
+
+    该表会记录该流程实例运行过程中，参与人与节点的关系。
+
 - ACT_RU_INTEGRATION
+
 - ACT_RU_JOB
+
 - ACT_RU_SUSPENDED_JOB
-- ACT_RU_TASK
+
+- ACT_RU_TASK（当前运行任务表）
+
+    流程实例启动后，该表会新增一条记录，记录的是当前需要完成的任务。
+
 - ACT_RU_TIMER_JOB
-- ACT_RU_VARIABLE
+
+- ACT_RU_VARIABLE（运行时参数表）
 
 
 
@@ -278,19 +319,781 @@ public class Activiti7LabApplication {
 
 ## 1、流程部署 Deployment
 
+### 1.1、基本操作
 
+在 `resources/bpmn` 目录下新建 `Part1_Deployment.bpmn20.xml` 文件，内容如下
+
+![image-20221120164156063](Activiti7.assets/image-20221120164156063.png)
+
+![image-20221120164320938](Activiti7.assets/image-20221120164320938.png)
+
+新建 `Part1_Deployment.java` 文件，内容如下
+
+```java
+package com.zgy;
+
+import lombok.extern.slf4j.Slf4j;
+import org.activiti.engine.RepositoryService;
+import org.activiti.engine.repository.Deployment;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
+
+/**
+ * <p>
+ *
+ * @author ZhangGuoYuan
+ * @since 2022-11-20
+ */
+@Slf4j
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public class Part1_Deployment {
+
+	@Autowired
+	private RepositoryService repositoryService;
+
+	/**
+	 * 初始化流程部署
+	 */
+	@Test
+	public void initDeploymentBPMN() {
+		String fileName = "bpmn/Part1_Deployment.bpmn20.xml";
+
+		Deployment deployment = repositoryService.createDeployment()
+				// 设置 BPMN 文件
+				.addClasspathResource(fileName)
+				// 设置流程部署名称
+				.name("流程部署测试 BPMN")
+				.deploy();
+		log.info("==========> name: [{}]", deployment.getName());
+	}
+}
+```
+
+### 1.2、添加 BPMN 图片
+
+将流程图保存为图片，修改 `Part1_Deployment.java` 文件，内容如下
+
+```java
+package com.zgy;
+
+import lombok.extern.slf4j.Slf4j;
+import org.activiti.engine.RepositoryService;
+import org.activiti.engine.repository.Deployment;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
+
+/**
+ * <p>
+ *
+ * @author ZhangGuoYuan
+ * @since 2022-11-20
+ */
+@Slf4j
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public class Part1_Deployment {
+
+	@Autowired
+	private RepositoryService repositoryService;
+
+	/**
+	 * 初始化流程部署
+	 */
+	@Test
+	public void initDeploymentBPMN() {
+		String fileName = "bpmn/Part1_Deployment.bpmn20.xml";
+		String imgName = "bpmn/Part1_Deployment.bpmn20.png";
+
+		Deployment deployment = repositoryService.createDeployment()
+				// 设置 BPMN 文件
+				.addClasspathResource(fileName)
+				// 设置 BPMN 图片
+				.addClasspathResource(imgName)
+				// 设置流程部署名称
+				.name("流程部署测试 BPMN_V2")
+				.deploy();
+		log.info("==========> name: [{}]", deployment.getName());
+	}
+}
+```
+
+**Tips**：在 Activiti7 中，已经不推荐将 BPMN 图片保存到数据库了，现在有前端插件能够将生成的 BPMN 文件进行解析并回显。
+
+### 1.3、使用 ZIP 文件
+
+将文件 `Part1_Deployment.bpmn20.xml` 和 `Part1_Deployment.bpmn20.png` 压缩为 ZIP 格式的压缩文件，文件名为 `Part1_Deployment.bpmn20.zip`，修改 `Part1_Deployment.java` 文件，新增内容如下
+
+```java
+/**
+ * 初始化流程部署-ZIP
+ */
+@Test
+public void initDeploymentZIP() {
+    // 获取文件流
+    InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream("bpmn/Part1_Deployment.bpmn20.zip");
+
+    // 转换流
+    Assert.notNull(inputStream, "inputStream 为空");
+    ZipInputStream zipInputStream = new ZipInputStream(inputStream);
+
+    // 流程部署
+    Deployment deployment = repositoryService.createDeployment()
+        .addZipInputStream(zipInputStream)
+        .name("流程部署测试 ZIP").deploy();
+    log.info("==========> name: [{}]", deployment.getName());
+}
+```
+
+**Tips**：压缩文件在流程部署过程中会自动解压。
+
+### 1.4、查看流程部署
+
+修改 `Part1_Deployment.java` 文件，新增内容如下
+
+```java
+/**
+ * 获取流程部署
+ */
+@Test
+public void getDeployments() {
+	List<Deployment> list = repositoryService
+			// 创建流程部署查询对象
+			.createDeploymentQuery()
+			// 获取所有的流程部署
+			.list();
+	list.forEach(dep -> {
+		log.info("==========> id: [{}], name: [{}], deploymentTime: [{}]", dep.getId(), dep.getName(), dep.getDeploymentTime());
+	});
+}
+```
+
+### 1.5、删除流程部署
+
+修改 `Part1_Deployment.java` 文件，新增内容如下
+
+```java
+/**
+ * 删除流程部署
+ */
+@Test
+public void delDeployment() {
+	/*
+	第一个参数是流程部署 id。
+	第二个参数，解释如下
+		true：删除历史记录和正在运行的任务记录。
+		false：不删除历史记录和正在运行的任务记录。
+	*/
+	repositoryService.deleteDeployment("a8ba3f1a-68b9-11ed-9cb0-8286f2267041", true);
+	log.info("==========> 流程部署删除成功！");
+}
+```
+
+### 1.6、涉及的表
+
+- ACT_RE_PROCDEF
+- ACT_RE_DEPLOYMENT
+- ACT_GE_BYTEARRAY
 
 ## 2、流程定义 ProcessDefinition
 
+### 2.1、查看流程定义
+
+新建 `Part2_ProcessDefinition.java` 文件，内容如下
+
+```java
+package com.zgy;
+
+import lombok.extern.slf4j.Slf4j;
+import org.activiti.engine.RepositoryService;
+import org.activiti.engine.repository.ProcessDefinition;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
+
+import java.util.List;
+
+/**
+ * <p>
+ *
+ * @author ZhangGuoYuan
+ * @since 2022-11-20
+ */
+@Slf4j
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public class Part2_ProcessDefinition {
+
+	@Autowired
+	private RepositoryService repositoryService;
+
+	/**
+	 * 获取流程定义
+	 */
+	@Test
+	public void getDefinitions() {
+		List<ProcessDefinition> list = repositoryService
+				// 创建流程定义查询对象
+				.createProcessDefinitionQuery()
+				// 获取所有的流程定义
+				.list();
+
+		list.forEach(proc -> {
+			log.info("==========> name: [{}], key: [{}], resourceName: [{}], deploymentId: [{}], version: [{}]", proc.getName(), proc.getKey(), proc.getResourceName(), proc.getDeploymentId(), proc.getVersion());
+		});
+	}
+}
+```
+
+### 2.2、涉及的表
+
+- ACT_RE_PROCDEF
+
 ## 3、流程实例 ProcessInstance
+
+### 3.1、启动流程实例
+
+新建 `Part3_ProcessInstance.java` 文件，内容如下
+
+```java
+package com.zgy;
+
+import lombok.extern.slf4j.Slf4j;
+import org.activiti.engine.RuntimeService;
+import org.activiti.engine.runtime.ProcessInstance;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
+
+/**
+ * <p>
+ *
+ * @author ZhangGuoYuan
+ * @since 2022-11-20
+ */
+@Slf4j
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public class Part3_ProcessInstance {
+
+	@Autowired
+	private RuntimeService runtimeService;
+
+	/**
+	 * 启动（初始化）流程实例
+	 */
+	@Test
+	public void initProcessInstance() {
+		ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("myProcess_Part1");
+		log.info("==========> 流程定义启动成功，processInstanceId: [{}]，processDefinitionVersion：[{}]", processInstance.getProcessInstanceId(), processInstance.getProcessDefinitionVersion());
+	}
+}
+```
+
+**Tips**：当流程定义表 `ACT_RE_PROCDEF` 中对应的 `KEY_` 存在多条记录时，会取 `VERSION_` 的值为最大的那条流程定义来启动流程实例。
+
+### 3.2、查看流程实例
+
+修改 `Part3_ProcessInstance.java` 文件，新增内容如下
+
+```java
+/**
+ * 查看流程实例
+ */
+@Test
+public void getProcessInstances() {
+    List<ProcessInstance> list = runtimeService
+        // 创建流程实例查询对象
+        .createProcessInstanceQuery()
+        // 获取所有的流程实例
+        .list();
+
+    list.forEach(proc -> log.info("==========> processInstanceId: [{}], processDefinitionId: [{}], isEnded: [{}], isSuspended: [{}]", proc.getProcessInstanceId(), proc.getProcessDefinitionId(), proc.isEnded(), proc.isSuspended()));
+}
+```
+
+### 3.3、暂停流程实例
+
+修改 `Part3_ProcessInstance.java` 文件，新增内容如下
+
+```java
+/**
+ * 暂停流程实例
+ */
+@Test
+public void suspendProcessInstance() {
+    runtimeService.suspendProcessInstanceById("2302a770-68e1-11ed-aaa4-8286f2267041");
+    log.info("==========> 暂停流程实例成功！");
+}
+```
+
+### 3.4、激活流程实例
+
+修改 `Part3_ProcessInstance.java` 文件，新增内容如下
+
+```java
+/**
+ * 激活流程实例
+ */
+@Test
+public void activateProcessInstance() {
+    runtimeService.activateProcessInstanceById("2302a770-68e1-11ed-aaa4-8286f2267041");
+    log.info("==========> 激活流程实例成功！");
+}
+```
+
+### 3.5、删除流程实例
+
+修改 `Part3_ProcessInstance.java` 文件，新增内容如下
+
+```java
+/**
+ * 删除流程实例
+ */
+@Test
+public void delProcessInstance() {
+	/*
+	第一个参数是流程实例 id
+	第二个参数是删除原因
+	*/
+	runtimeService.deleteProcessInstance("2302a770-68e1-11ed-aaa4-8286f2267041", "原因AAA");
+	log.info("==========> 删除流程实例成功！");
+}
+```
+
+### 3.6、涉及的表
+
+- ACT_RU_EXECUTION
+- ACT_RU_IDENTITYLINK
 
 ## 4、任务处理 Task
 
+### 4.1、基本操作
+
+在 `resources/bpmn` 目录下新建 `Part4_Task.bpmn20.xml` 文件，内容如下
+
+![image-20221120233946185](Activiti7.assets/image-20221120233946185.png)
+
+![image-20221120234203105](Activiti7.assets/image-20221120234203105.png)
+
+![image-20221120234327224](Activiti7.assets/image-20221120234327224.png)
+
+
+
+对上面的内容进行流程部署，然后启动实例，新建 `Part4_Task.java` 文件，内容如下
+
+```java
+package com.zgy;
+
+import lombok.extern.slf4j.Slf4j;
+import org.activiti.engine.RepositoryService;
+import org.activiti.engine.RuntimeService;
+import org.activiti.engine.TaskService;
+import org.activiti.engine.repository.Deployment;
+import org.activiti.engine.runtime.ProcessInstance;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
+
+/**
+ * <p>
+ *
+ * @author ZhangGuoYuan
+ * @since 2022-11-20
+ */
+@Slf4j
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public class Part4_Task {
+
+	@Autowired
+	private RepositoryService repositoryService;
+	@Autowired
+	private RuntimeService runtimeService;
+
+	/**
+	 * 初始化流程部署
+	 */
+	@Test
+	public void initDeploymentBPMN() {
+		Deployment deployment = repositoryService.createDeployment()
+				// 设置 BPMN 文件
+				.addClasspathResource("bpmn/Part4_Task.bpmn20.xml")
+				// 设置流程部署名称
+				.name("流程部署测试 task")
+				.deploy();
+		log.info("==========> name: [{}]", deployment.getName());
+	}
+
+	/**
+	 * 启动（初始化）流程实例
+	 */
+	@Test
+	public void initProcessInstance() {
+		ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("myProcess_Task");
+		log.info("==========> 流程定义启动成功，processInstanceId: [{}]，processDefinitionVersion：[{}]", processInstance.getProcessInstanceId(), processInstance.getProcessDefinitionVersion());
+	}
+}
+```
+
+### 4.2、查看任务
+
+修改 `Part4_Task.java` 文件，新增内容如下
+
+```java
+/**
+ * 查看任务
+ */
+@Test
+public void getTasks() {
+	List<Task> list = taskService
+			// 创建任务查询对象
+			.createTaskQuery()
+			// 获取所有的任务
+			.list();
+	list.forEach(task -> log.info("==========> id: [{}], name: [{}], assignee: [{}]", task.getId(), task.getName(), task.getAssignee()));
+}
+```
+
+### 4.3、查看我的待办任务
+
+修改 `Part4_Task.java` 文件，新增内容如下
+
+```java
+/**
+ * 查看我的待办任务
+ */
+@Test
+public void getTasksByAssignee() {
+	List<Task> list = taskService
+			// 创建任务查询对象
+			.createTaskQuery()
+			// 设置要查询的处理人
+			.taskAssignee("BaJie")
+			// .taskAssignee("WuKong")
+			// 获取所有的任务
+			.list();
+	list.forEach(task -> log.info("==========> id: [{}], name: [{}], assignee: [{}]", task.getId(), task.getName(), task.getAssignee()));
+}
+```
+
+### 4.4、完成任务
+
+修改 `Part4_Task.java` 文件，新增内容如下
+
+```java
+/**
+ * 完成任务
+ */
+@Test
+public void completeTask() {
+	taskService.complete("51cfe7af-6a49-11ed-a3fa-8086f2267041");
+	log.info("==========> 任务已完成！");
+}
+```
+
+### 4.5、拾取任务
+
+在 `resources/bpmn` 目录下新建 `Part4_Task_claim.bpmn20.xml` 文件，内容如下
+
+![image-20221122175336558](Activiti7.assets/image-20221122175336558.png)
+
+![image-20221122175459349](Activiti7.assets/image-20221122175459349.png)
+
+对上面的内容进行流程部署，然后启动实例，修改 `Part4_Task.java` 文件，修改内容如下
+
+```java
+/**
+ * 初始化流程部署
+ */
+@Test
+public void initDeploymentBPMN() {
+	Deployment deployment = repositoryService.createDeployment()
+			// 设置 BPMN 文件
+			.addClasspathResource("bpmn/Part4_Task_claim.bpmn20.xml")
+			// 设置流程部署名称
+			.name("流程部署测试候选人 task")
+			.deploy();
+	log.info("==========> name: [{}]", deployment.getName());
+}
+
+/**
+ * 启动（初始化）流程实例
+ */
+@Test
+public void initProcessInstance() {
+	ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("myProcess_claim");
+	log.info("==========> 流程定义启动成功，processInstanceId: [{}]，processDefinitionVersion：[{}]", processInstance.getProcessInstanceId(), processInstance.getProcessDefinitionVersion());
+}
+```
+
+拾取任务，修改 `Part4_Task.java` 文件，新增内容如下
+
+```java
+/**
+ * 拾取任务
+ */
+@Test
+public void claimTask() {
+	taskService.claim("8243bf37-6a4c-11ed-a6c4-8086f2267041", "BaJie");
+	log.info("==========> 拾取任务成功！");
+}
+```
+
+### 4.6、归还或交办任务
+
+修改 `Part4_Task.java` 文件，新增内容如下
+
+```java
+/**
+ * 归还或交办任务
+ */
+@Test
+public void setTaskAssignee() {
+	// 归还任务
+	// taskService.setAssignee("8243bf37-6a4c-11ed-a6c4-8086f2267041", null);
+	// log.info("==========> 归还任务成功！");
+	// 交办任务
+	taskService.setAssignee("8243bf37-6a4c-11ed-a6c4-8086f2267041", "WuKong");
+	log.info("==========> 交办任务成功！");
+}
+```
+
+### 4.7、涉及的表
+
+- ACT_RU_TASK
+- ACT_RU_EXECUTION
+- ACT_RU_IDENTITYLINK
+
 ## 5、历史任务 HistoryService
+
+### 5.1、根据用户名查询历史任务记录
+
+新建 `Part5_HistoricTaskInstance.java` 文件，内容如下
+
+```java
+package com.zgy;
+
+import lombok.extern.slf4j.Slf4j;
+import org.activiti.engine.HistoryService;
+import org.activiti.engine.history.HistoricTaskInstance;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
+
+import java.util.List;
+
+/**
+ * <p>
+ *
+ * @author ZhangGuoYuan
+ * @since 2022-11-22
+ */
+@Slf4j
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public class Part5_HistoricTaskInstance {
+
+	@Autowired
+	private HistoryService historyService;
+
+	/**
+	 * 根据用户名查询历史任务记录
+	 */
+	@Test
+	public void historicTaskInstanceByUser() {
+		List<HistoricTaskInstance> list = historyService
+				// 创建历史任务查询对象
+				.createHistoricTaskInstanceQuery()
+				// 设置查询用户
+				.taskAssignee("WuKong")
+				// 设置按照任务完成时间升序
+				.orderByHistoricTaskInstanceEndTime().asc()
+				// 获取历史任务记录
+				.list();
+
+		list.forEach(task -> log.info("==========> id: [{}], processInstanceId: [{}], name: [{}]", task.getId(), task.getProcessInstanceId(), task.getName()));
+	}
+}
+
+```
+
+### 5.2、根据流程实例查询历史任务记录
+
+修改 `Part5_HistoricTaskInstance.java` 文件，新增内容如下
+
+```java
+/**
+ * 根据流程实例查询历史任务记录
+ */
+@Test
+public void historicTaskInstanceByPiId() {
+	List<HistoricTaskInstance> list = historyService
+			// 创建历史任务查询对象
+			.createHistoricTaskInstanceQuery()
+			// 设置查询用户
+			.processInstanceId("81362e2c-6a46-11ed-8fe5-8086f2267041")
+			// 设置按照任务完成时间升序
+			.orderByHistoricTaskInstanceEndTime().asc()
+			// 获取历史任务记录
+			.list();
+	list.forEach(task -> log.info("==========> id: [{}], processInstanceId: [{}], name: [{}]", task.getId(), task.getProcessInstanceId(), task.getName()));
+}
+```
+
+### 5.3、涉及的表
+
+- ACT_HI_ACTINST
+- ACT_HI_IDENTITYLINK
+- ACT_HI_PROCINST
+- ACT_HI_TASKINST
 
 
 
 # UEL 表达式
+
+## 1、基本知识
+
+### 1.1、UEL 表达式（统一表达式语言）。
+
+### 1.2、表达式描述
+
+![image-20221122231051362](Activiti7.assets/image-20221122231051362.png)
+
+### 1.3、对应的数据表
+
+- ACT_RU_VARIABLE（运行时参数表）
+- ACT_HI_VARINST（历史参数表）
+
+### 1.4、UEL 表达式的保留字
+
+![image-20221122231439410](Activiti7.assets/image-20221122231439410.png)
+
+### 1.5、UEL 表达式的运算符
+
+![image-20221122231524101](Activiti7.assets/image-20221122231524101.png)
+
+## 2、实战案例
+
+### 2.1、启动流程实例带参数指定执行人
+
+在 `resources/bpmn` 目录下新建 `Part6_UEL_V1.bpmn20.xml` 文件，内容如下
+
+![image-20221122234131771](Activiti7.assets/image-20221122234131771.png)
+
+![image-20221122234235190](Activiti7.assets/image-20221122234235190.png)
+
+对 `Part6_UEL_V1.bpmn20.xml` 文件进行流程部署，关键代码如下
+
+```java
+/**
+ * 初始化流程部署
+ */
+@Test
+public void initDeploymentBPMN() {
+	Deployment deployment = repositoryService.createDeployment()
+			// 设置 BPMN 文件
+			.addClasspathResource("bpmn/Part6_UEL_V1.bpmn20.xml")
+			// 设置流程部署名称
+			.name("流程部署测试 UEL V1")
+			.deploy();
+	log.info("==========> name: [{}]", deployment.getName());
+}
+```
+
+新建 `Part6_UEL.java` 文件，内容如下
+
+```java
+package com.zgy;
+
+import lombok.extern.slf4j.Slf4j;
+import org.activiti.engine.RuntimeService;
+import org.activiti.engine.runtime.ProcessInstance;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
+
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * <p>
+ *
+ * @author ZhangGuoYuan
+ * @since 2022-11-22
+ */
+@Slf4j
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public class Part6_UEL {
+
+	@Autowired
+	private RuntimeService runtimeService;
+
+	/**
+	 * 启动流程实例带参数指定执行人
+	 */
+	@Test
+	public void initProcessInstanceWithArgs() {
+		Map<String, Object> variables = new HashMap<>();
+		variables.put("ZhiXingRen", "WuKong");
+		ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("myProcess_UEL_V1", variables);
+		log.info("==========> 流程实例启动成功，processInstanceId: [{}]", processInstance.getProcessInstanceId());
+	}
+}
+```
+
+查看任务，关键代码如下
+
+```java
+/**
+ * 查看我的待办任务
+ */
+@Test
+public void getTasksByAssignee() {
+	List<Task> list = taskService
+			// 创建任务查询对象
+			.createTaskQuery()
+			// 设置要查询的处理人
+			// .taskAssignee("BaJie")
+			.taskAssignee("WuKong")
+			// 获取所有的任务
+			.list();
+	list.forEach(task -> log.info("==========> id: [{}], name: [{}], assignee: [{}]", task.getId(), task.getName(), task.getAssignee()));
+}
+```
+
+结果如下
+
+![image-20221122235806326](Activiti7.assets/image-20221122235806326.png)
+
+### 2.2、完成任务带参数
+
+
+
+启动流程实例带参数（实体类）
+
+启动流程实例带参数（多候选人）
+
+直接指定流程变量
+
+局部变量
 
 
 
