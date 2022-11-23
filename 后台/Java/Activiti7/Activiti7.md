@@ -1085,15 +1085,323 @@ public void getTasksByAssignee() {
 
 ### 2.2、完成任务带参数
 
+在 `resources/bpmn` 目录下新建 `Part6_UEL_V2.bpmn20.xml` 文件，内容如下
 
+![image-20221123213150134](Activiti7.assets/image-20221123213150134.png)
 
-启动流程实例带参数（实体类）
+![image-20221123213328628](Activiti7.assets/image-20221123213328628.png)
 
-启动流程实例带参数（多候选人）
+![image-20221123213428225](Activiti7.assets/image-20221123213428225.png)
 
-直接指定流程变量
+![image-20221123213515809](Activiti7.assets/image-20221123213515809.png)
 
-局部变量
+![image-20221123213625559](Activiti7.assets/image-20221123213625559.png)
+
+![image-20221123213849206](Activiti7.assets/image-20221123213849206.png)
+
+对 `Part6_UEL_V2.bpmn20.xml` 文件进行流程部署并启动流程实例，关键代码如下
+
+```java
+@Autowired
+private RepositoryService repositoryService;
+@Autowired
+private RuntimeService runtimeService;
+
+/**
+ * 初始化流程部署
+ */
+@Test
+public void initDeploymentBPMN() {
+	Deployment deployment = repositoryService.createDeployment()
+			// 设置 BPMN 文件
+			.addClasspathResource("bpmn/Part6_UEL_V2.bpmn20.xml")
+			// 设置流程部署名称
+			.name("流程部署测试 UEL V2")
+			.deploy();
+	log.info("==========> name: [{}]", deployment.getName());
+}
+
+/**
+ * 启动（初始化）流程实例
+ */
+@Test
+public void initProcessInstance() {
+	// ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("myProcess_Task");
+	ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("myProcess_UEL_V2");
+	log.info("==========> 流程定义启动成功，processInstanceId: [{}]，processDefinitionVersion：[{}]", processInstance.getProcessInstanceId(), processInstance.getProcessDefinitionVersion());
+}
+```
+
+查看任务，关键代码如下
+
+```java
+/**
+ * 查看我的待办任务
+ */
+@Test
+public void getTasksByAssignee() {
+	List<Task> list = taskService
+			// 创建任务查询对象
+			.createTaskQuery()
+			// 设置要查询的处理人
+			.taskAssignee("BaJie")
+			// 获取所有的任务
+			.list();
+	list.forEach(task -> log.info("==========> id: [{}], name: [{}], assignee: [{}]", task.getId(), task.getName(), task.getAssignee()));
+}
+```
+
+结果如下
+
+![image-20221123214836480](Activiti7.assets/image-20221123214836480.png)
+
+完成任务并带参数，修改 `Part6_UEL.java` 文件，新增内容如下
+
+```java
+/**
+ * 完成任务带参数
+ */
+@Test
+public void completeTaskWithArgs() {
+	Map<String, Object> variables = new HashMap<>();
+	variables.put("pay", 101);
+	taskService.complete("316e922e-6b32-11ed-9ea1-8086f2267041", variables);
+	log.info("==========> 已完成任务！");
+}
+```
+
+查看任务，关键代码如下
+
+```java
+/**
+ * 查看我的待办任务
+ */
+@Test
+public void getTasksByAssignee() {
+	List<Task> list = taskService
+			// 创建任务查询对象
+			.createTaskQuery()
+			// 设置要查询的处理人
+			.taskAssignee("WuKong")
+			// 获取所有的任务
+			.list();
+	list.forEach(task -> log.info("==========> id: [{}], name: [{}], assignee: [{}]", task.getId(), task.getName(), task.getAssignee()));
+}
+```
+
+结果如下
+
+![image-20221123215413068](Activiti7.assets/image-20221123215413068.png)
+
+### 2.3、启动流程实例带参数（实体类）
+
+新建 `UEL_POJO.java` 文件，内容如下
+
+```java
+package com.zgy;
+
+import lombok.Data;
+
+import java.io.Serializable;
+
+/**
+ * <p>
+ *
+ * @author ZhangGuoYuan
+ * @since 2022-11-23
+ */
+@Data
+public class UEL_POJO implements Serializable {
+
+	private static final long serialVersionUID = 1L;
+
+	private String zhiXingRen;
+}
+```
+
+在 `resources/bpmn` 目录下新建 `Part6_UEL_V3.bpmn20.xml` 文件，内容如下
+
+![image-20221123222758711](Activiti7.assets/image-20221123222758711.png)
+
+![image-20221123222909798](Activiti7.assets/image-20221123222909798.png)
+
+![image-20221123223028881](Activiti7.assets/image-20221123223028881.png)
+
+对 `Part6_UEL_V3.bpmn20.xml` 文件进行流程部署，关键代码如下
+
+```java
+@Autowired
+private RepositoryService repositoryService;
+
+/**
+ * 初始化流程部署
+ */
+@Test
+public void initDeploymentBPMN() {
+	Deployment deployment = repositoryService.createDeployment()
+			// 设置 BPMN 文件
+			.addClasspathResource("bpmn/Part6_UEL_V3.bpmn20.xml")
+			// 设置流程部署名称
+			.name("流程部署测试 UEL V3")
+			.deploy();
+	log.info("==========> name: [{}]", deployment.getName());
+}
+
+```
+
+启动流程实例，修改 `Part6_UEL.java` 文件，新增内容如下
+
+```java
+/**
+ * 启动流程实例带参数（实体类）
+ */
+@Test
+public void initProcessInstanceWithClassArgs() {
+	UEL_POJO uel_pojo = new UEL_POJO();
+	uel_pojo.setZhiXingRen("BaJie");
+	Map<String, Object> variables = new HashMap<>();
+	variables.put("uel_pojo", uel_pojo);
+	ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("myProcess_UEL_V3", variables);
+	log.info("==========> 流程实例启动成功，processInstanceId: [{}]", processInstance.getProcessInstanceId());
+}
+```
+
+查看任务，关键代码如下
+
+```java
+@Autowired
+private TaskService taskService;
+
+/**
+ * 查看我的待办任务
+ */
+@Test
+public void getTasksByAssignee() {
+	List<Task> list = taskService
+			// 创建任务查询对象
+			.createTaskQuery()
+			// 设置要查询的处理人
+			.taskAssignee("BaJie")
+			// 获取所有的任务
+			.list();
+	list.forEach(task -> log.info("==========> id: [{}], name: [{}], assignee: [{}]", task.getId(), task.getName(), task.getAssignee()));
+}
+```
+
+结果如下
+
+![image-20221123223517354](Activiti7.assets/image-20221123223517354.png)
+
+### 2.4、完成任务带参数（多候选人）
+
+继续沿用 `Part6_UEL_V3.bpmn20.xml` 文件。
+
+完成任务，并设置下一任务的候选人。修改 `Part6_UEL.java` 文件，新增内容如下
+
+```java
+/**
+ * 完成任务带参数（多候选人）
+ */
+@Test
+public void completeTaskWithCandiDateArgs() {
+	Map<String, Object> variables = new HashMap<>();
+	variables.put("houXuanRen", "WuKong,TangSeng");
+	taskService.complete("88685fa2-6b3a-11ed-8a09-8086f2267041", variables);
+	log.info("==========> 已完成任务！");
+}
+```
+
+查看任务，关键代码如下
+
+```java
+@Autowired
+private TaskService taskService;
+
+/**
+ * 查看任务
+ */
+@Test
+public void getTasks() {
+	List<Task> list = taskService
+			// 创建任务查询对象
+			.createTaskQuery()
+			// 获取所有的任务
+			.list();
+	list.forEach(task -> log.info("==========> id: [{}], name: [{}], assignee: [{}]", task.getId(), task.getName(), task.getAssignee()));
+}
+```
+
+结果如下
+
+![image-20221123224440331](Activiti7.assets/image-20221123224440331.png)
+
+### 2.5、直接设置流程/任务变量
+
+修改 `Part6_UEL.java` 文件，新增内容如下
+
+```java
+/**
+ * 直接设置流程/任务变量
+ */
+@Test
+public void otherArgs() {
+	/*
+	修改流程的候选人。
+	参数解释：
+		第一个参数：表 ACT_RU_VARIABLE 的 EXECUTION_ID_ 字段。
+		第二个参数：表 ACT_RU_VARIABLE 的 NAME_ 字段。
+		第三个参数：新的值。
+	*/
+	// runtimeService.setVariable("8863a4af-6b3a-11ed-8a09-8086f2267041", "houXuanRen", "WuKong,ShaSeng,TangSeng");
+    // log.info("==========> 设置流程变量成功！");
+    
+	/*
+	修改任务的候选人
+	参数解释：
+		第一个参数：ACT_RU_VARIABLE 的 TASK_ID_ 字段。
+		第二个参数：表 ACT_RU_VARIABLE 的 NAME_ 字段。
+		第三个参数：新的值。
+	*/
+	taskService.setVariable("e3ebbb08-6b3c-11ed-99b4-8086f2267041", "houXuanRen", "WuKong,ShaSeng,TangSeng");
+	log.info("==========> 设置任务变量成功！");
+}
+```
+
+### 2.6、直接设置局部变量
+
+修改 `Part6_UEL.java` 文件，新增内容如下
+
+```java
+/**
+ * 直接设置局部变量
+ */
+@Test
+public void otherLocalArgs() {
+	/*
+	修改流程的候选人。
+	参数解释：
+		第一个参数：表 ACT_RU_VARIABLE 的 EXECUTION_ID_ 字段。
+		第二个参数：表 ACT_RU_VARIABLE 的 NAME_ 字段。
+		第三个参数：新的值。
+	*/
+	runtimeService.setVariableLocal("8863a4af-6b3a-11ed-8a09-8086f2267041", "houXuanRen", "WuKong,ShaSeng");
+	log.info("==========> 设置流程局部变量成功！");
+	/*
+	修改任务的候选人
+	参数解释：
+		第一个参数：ACT_RU_VARIABLE 的 TASK_ID_ 字段。
+		第二个参数：表 ACT_RU_VARIABLE 的 NAME_ 字段。
+		第三个参数：新的值。
+	*/
+	taskService.setVariableLocal("e3ebbb08-6b3c-11ed-99b4-8086f2267041", "houXuanRen", "WuKong,ShaSeng");
+	log.info("==========> 设置任务局部变量成功！");
+}
+```
+
+## 3、全局变量和局部变量区别
+
+- 全局变量：整个流程实例中变量值共享。
+- 局部变量：只在某个节点有效。
 
 
 
