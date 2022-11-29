@@ -1407,6 +1407,517 @@ public void otherLocalArgs() {
 
 # BPMN2.0 流程网关
 
+## 1、常见网关
+
+- 并行网关：多用于多人审批的场景，必须要所有的审批都通过。
+- 排他网关：多用于条件判断的场景，只要任一一个审批通过。
+- 包容网关：多用于多人审批并带条件的场景，保证符合条件的审批都通过。
+- 事件网关：多用于产生了某些事件的场景，对应事件审批通过。
+
+## 2、并行网关-案例
+
+在 `resources/bpmn` 目录下新建 `Part7_Parallel.bpmn20.xml` 文件，内容如下
+
+![image-20221129223122586](Activiti7.assets/image-20221129223122586.png)
+
+![image-20221129223220821](Activiti7.assets/image-20221129223220821.png)
+
+![image-20221129223419698](Activiti7.assets/image-20221129223419698.png)
+
+![image-20221129223509867](Activiti7.assets/image-20221129223509867.png)
+
+对 `Part7_Parallel.bpmn20.xml` 文件进行流程部署，关键代码如下
+
+```java
+@Autowired
+private RepositoryService repositoryService;
+
+/**
+ * 初始化流程部署
+ */
+@Test
+public void initDeploymentBPMN() {
+	Deployment deployment = repositoryService.createDeployment()
+			// 设置 BPMN 文件
+			.addClasspathResource("bpmn/Part7_Parallel.bpmn20.xml")
+			// 设置流程部署名称
+			.name("流程部署测试并行网关")
+			.deploy();
+	log.info("==========> name: [{}]", deployment.getName());
+}
+```
+
+启动流程实例，关键代码如下
+
+```java
+@Autowired
+private RuntimeService runtimeService;
+
+/**
+ * 启动（初始化）流程实例
+ */
+@Test
+public void initProcessInstance() {
+	ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("myProcess_Parallel");
+	log.info("==========> 流程定义启动成功，processInstanceId: [{}]，processDefinitionVersion：[{}]", processInstance.getProcessInstanceId(), processInstance.getProcessDefinitionVersion());
+}
+```
+
+查看任务，关键代码如下
+
+```java
+@Autowired
+private TaskService taskService;
+
+/**
+ * 查看我的待办任务
+ */
+@Test
+public void getTasksByAssignee() {
+	List<Task> list = taskService
+			// 创建任务查询对象
+			.createTaskQuery()
+			// 设置要查询的处理人
+			.taskAssignee("BaJie")
+			// .taskAssignee("WuKong")
+			// 获取所有的任务
+			.list();
+	list.forEach(task -> log.info("==========> id: [{}], name: [{}], assignee: [{}]", task.getId(), task.getName(), task.getAssignee()));
+}
+```
+
+结果如下
+
+![image-20221129224956051](Activiti7.assets/image-20221129224956051.png)
+
+新建 `Part7_Gateway.java` 文件，内容如下
+
+```java
+package com.zgy;
+
+import lombok.extern.slf4j.Slf4j;
+import org.activiti.engine.TaskService;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
+
+/**
+ * <p>
+ *
+ * @author ZhangGuoYuan
+ * @since 2022/11/29
+ */
+@Slf4j
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public class Part7_Gateway {
+
+	@Autowired
+	private TaskService taskService;
+
+	/**
+	 * 完成任务
+	 */
+	@Test
+	public void completeTask() {
+		taskService.complete("8266026b-6ff4-11ed-9514-8286f2267041");
+		log.info("==========> 任务已完成！");
+	}
+}
+```
+
+执行 `completeTask()` 方法，然后查看任务，关键代码如下
+
+```java
+@Autowired
+private TaskService taskService;
+
+/**
+ * 查看我的待办任务
+ */
+@Test
+public void getTasksByAssignee() {
+	List<Task> list = taskService
+			// 创建任务查询对象
+			.createTaskQuery()
+			// 设置要查询的处理人
+			// .taskAssignee("BaJie")
+			.taskAssignee("WuKong")
+			// 获取所有的任务
+			.list();
+	list.forEach(task -> log.info("==========> id: [{}], name: [{}], assignee: [{}]", task.getId(), task.getName(), task.getAssignee()));
+}
+```
+
+结果如下
+
+![image-20221129225546661](Activiti7.assets/image-20221129225546661.png)
+
+再次查看任务，关键代码如下
+
+```java
+@Autowired
+private TaskService taskService;
+
+/**
+ * 查看我的待办任务
+ */
+@Test
+public void getTasksByAssignee() {
+	List<Task> list = taskService
+			// 创建任务查询对象
+			.createTaskQuery()
+			// 设置要查询的处理人
+			// .taskAssignee("BaJie")
+			// .taskAssignee("WuKong")
+			.taskAssignee("TangSeng")
+			// 获取所有的任务
+			.list();
+	list.forEach(task -> log.info("==========> id: [{}], name: [{}], assignee: [{}]", task.getId(), task.getName(), task.getAssignee()));
+}
+```
+
+结果如下
+
+![image-20221129230009979](Activiti7.assets/image-20221129230009979.png)
+
+## 3、排他网关-案例
+
+在 `resources/bpmn` 目录下新建 `Part7_Exclusive.bpmn20.xml` 文件，内容如下
+
+<img src="Activiti7.assets/image-20221129231153422.png" alt="image-20221129231153422"  />
+
+![image-20221129233219372](Activiti7.assets/image-20221129233219372.png)
+
+![image-20221129231412094](Activiti7.assets/image-20221129231412094.png)
+
+![image-20221129231500373](Activiti7.assets/image-20221129231500373.png)
+
+![image-20221129231548651](Activiti7.assets/image-20221129231548651.png)
+
+![image-20221129231636214](Activiti7.assets/image-20221129231636214.png)
+
+对 `Part7_Exclusive.bpmn20.xml` 文件进行流程部署，关键代码如下
+
+```java
+@Autowired
+private RepositoryService repositoryService;
+
+/**
+ * 初始化流程部署
+ */
+@Test
+public void initDeploymentBPMN() {
+	Deployment deployment = repositoryService.createDeployment()
+			// 设置 BPMN 文件
+			.addClasspathResource("bpmn/Part7_Exclusive.bpmn20.xml")
+			// 设置流程部署名称
+			.name("流程部署测试排他网关")
+			.deploy();
+	log.info("==========> name: [{}]", deployment.getName());
+}
+```
+
+启动流程实例，关键代码如下
+
+```java
+@Autowired
+private RuntimeService runtimeService;
+
+/**
+ * 启动（初始化）流程实例
+ */
+@Test
+public void initProcessInstance() {
+	ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("myProcess_Exclusive");
+	log.info("==========> 流程定义启动成功，processInstanceId: [{}]，processDefinitionVersion：[{}]", processInstance.getProcessInstanceId(), processInstance.getProcessDefinitionVersion());
+}
+```
+
+查看任务，关键代码如下
+
+```java
+@Autowired
+private TaskService taskService;
+
+/**
+ * 查看我的待办任务
+ */
+@Test
+public void getTasksByAssignee() {
+	List<Task> list = taskService
+			// 创建任务查询对象
+			.createTaskQuery()
+			// 设置要查询的处理人
+			.taskAssignee("BaJie")
+			// .taskAssignee("WuKong")
+			// .taskAssignee("TangSeng")
+			// 获取所有的任务
+			.list();
+	list.forEach(task -> log.info("==========> id: [{}], name: [{}], assignee: [{}]", task.getId(), task.getName(), task.getAssignee()));
+}
+```
+
+结果如下
+
+![image-20221129233535084](Activiti7.assets/image-20221129233535084.png)
+
+完成任务，修改 `Part7_Gateway.java` 文件的 `completeTask()` 方法，修改内容如下
+
+```java
+/**
+ * 完成任务
+ */
+@Test
+public void completeTask() {
+	Map<String, Object> variables = new HashMap<>();
+	variables.put("day", 100);
+	taskService.complete("42c7d496-6ffb-11ed-9eaf-8286f2267041", variables);
+	log.info("==========> 任务已完成！");
+}
+```
+
+查看任务，关键代码如下
+
+```java
+@Autowired
+private TaskService taskService;
+
+/**
+ * 查看我的待办任务
+ */
+@Test
+public void getTasksByAssignee() {
+	List<Task> list = taskService
+			// 创建任务查询对象
+			.createTaskQuery()
+			// 设置要查询的处理人
+			// .taskAssignee("BaJie")
+			.taskAssignee("WuKong")
+			// .taskAssignee("TangSeng")
+			// 获取所有的任务
+			.list();
+	list.forEach(task -> log.info("==========> id: [{}], name: [{}], assignee: [{}]", task.getId(), task.getName(), task.getAssignee()));
+}
+```
+
+执行 `void getTasksByAssignee()` 结果是 WuKong 没有对应的任务需要处理。
+
+查看任务，关键代码如下
+
+```java
+@Autowired
+private TaskService taskService;
+
+/**
+ * 查看我的待办任务
+ */
+@Test
+public void getTasksByAssignee() {
+	List<Task> list = taskService
+			// 创建任务查询对象
+			.createTaskQuery()
+			// 设置要查询的处理人
+			// .taskAssignee("BaJie")
+			// .taskAssignee("WuKong")
+			.taskAssignee("TangSeng")
+			// 获取所有的任务
+			.list();
+	list.forEach(task -> log.info("==========> id: [{}], name: [{}], assignee: [{}]", task.getId(), task.getName(), task.getAssignee()));
+}
+```
+
+执行 `void getTasksByAssignee()` 结果如下
+
+![image-20221129234426985](Activiti7.assets/image-20221129234426985.png)
+
+## 4、包容网关-案例
+
+在 `resources/bpmn` 目录下新建 `Part7_Inclusive.bpmn20.xml` 文件，内容如下
+
+![image-20221130000417363](Activiti7.assets/image-20221130000417363.png)
+
+![image-20221129235638990](Activiti7.assets/image-20221129235638990.png)
+
+![image-20221129235728148](Activiti7.assets/image-20221129235728148.png)
+
+![image-20221129235819417](Activiti7.assets/image-20221129235819417.png)
+
+![image-20221129235908460](Activiti7.assets/image-20221129235908460.png)
+
+![image-20221129235954548](Activiti7.assets/image-20221129235954548.png)
+
+![image-20221130000044680](Activiti7.assets/image-20221130000044680-16697376460192.png)
+
+![image-20221130000142983](Activiti7.assets/image-20221130000142983.png)
+
+对 `Part7_Inclusive.bpmn20.xml` 文件进行流程部署并启动流程实例，关键代码如下
+
+```java
+@Autowired
+private RepositoryService repositoryService;
+@Autowired
+private RuntimeService runtimeService;
+
+/**
+ * 初始化流程部署
+ */
+@Test
+public void initDeploymentBPMN() {
+	Deployment deployment = repositoryService.createDeployment()
+			// 设置 BPMN 文件
+			.addClasspathResource("bpmn/Part7_Inclusive.bpmn20.xml")
+			// 设置流程部署名称
+			.name("流程部署测试包含网关")
+			.deploy();
+	log.info("==========> name: [{}]", deployment.getName());
+}
+
+
+/**
+ * 启动（初始化）流程实例
+ */
+@Test
+public void initProcessInstance() {
+	ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("myProcess_Inclusive");
+	log.info("==========> 流程定义启动成功，processInstanceId: [{}]，processDefinitionVersion：[{}]", processInstance.getProcessInstanceId(), processInstance.getProcessDefinitionVersion());
+}
+```
+
+先执行 `void initDeploymentBPMN()` 再执行 `void initProcessInstance()`。
+
+查看 BaJie 的待办任务，关键代码如下
+
+```java
+@Autowired
+private TaskService taskService;
+
+/**
+ * 查看我的待办任务
+ */
+@Test
+public void getTasksByAssignee() {
+	List<Task> list = taskService
+			// 创建任务查询对象
+			.createTaskQuery()
+			// 设置要查询的处理人
+			.taskAssignee("BaJie")
+			// .taskAssignee("WuKong")
+			// .taskAssignee("TangSeng")
+			// 获取所有的任务
+			.list();
+	list.forEach(task -> log.info("==========> id: [{}], name: [{}], assignee: [{}]", task.getId(), task.getName(), task.getAssignee()));
+}
+```
+
+执行 `void getTasksByAssignee()` 结果如下
+
+![image-20221130000940438](Activiti7.assets/image-20221130000940438.png)
+
+让 BaJie 完成任务内，修改 `Part7_Gateway.java` 文件，修改内容如下
+
+```java
+/**
+ * 完成任务
+ */
+@Test
+public void completeTask() {
+	Map<String, Object> variables = new HashMap<>();
+	variables.put("day", 1);
+	taskService.complete("bef787b3-6fff-11ed-a5ee-8286f2267041", variables);
+	log.info("==========> 任务已完成！");
+}
+```
+
+执行 `void completeTask()`。
+
+查看 ShangSeng 的待办任务，关键代码如下
+
+```java
+@Autowired
+private TaskService taskService;
+
+/**
+ * 查看我的待办任务
+ */
+@Test
+public void getTasksByAssignee() {
+	List<Task> list = taskService
+			// 创建任务查询对象
+			.createTaskQuery()
+			// 设置要查询的处理人
+			// .taskAssignee("BaJie")
+			.taskAssignee("ShangSeng")
+			// .taskAssignee("WuKong")
+			// .taskAssignee("TangSeng")
+			// 获取所有的任务
+			.list();
+	list.forEach(task -> log.info("==========> id: [{}], name: [{}], assignee: [{}]", task.getId(), task.getName(), task.getAssignee()));
+}
+```
+
+执行 `void getTasksByAssignee()` ，结果如下
+
+![image-20221130001353209](Activiti7.assets/image-20221130001353209.png)
+
+查看 WuKong 的待办任务，关键代码如下
+
+```java
+@Autowired
+private TaskService taskService;
+
+/**
+ * 查看我的待办任务
+ */
+@Test
+public void getTasksByAssignee() {
+	List<Task> list = taskService
+			// 创建任务查询对象
+			.createTaskQuery()
+			// 设置要查询的处理人
+			// .taskAssignee("BaJie")
+			// .taskAssignee("ShangSeng")
+			.taskAssignee("WuKong")
+			// .taskAssignee("TangSeng")
+			// 获取所有的任务
+			.list();
+	list.forEach(task -> log.info("==========> id: [{}], name: [{}], assignee: [{}]", task.getId(), task.getName(), task.getAssignee()));
+}
+```
+
+执行 `void getTasksByAssignee()` ，结果如下
+
+![image-20221130001545078](Activiti7.assets/image-20221130001545078.png)
+
+查看 TangSeng 的待办任务，关键代码如下
+
+```java
+@Autowired
+private TaskService taskService;
+
+/**
+ * 查看我的待办任务
+ */
+@Test
+public void getTasksByAssignee() {
+	List<Task> list = taskService
+			// 创建任务查询对象
+			.createTaskQuery()
+			// 设置要查询的处理人
+			// .taskAssignee("BaJie")
+			// .taskAssignee("ShangSeng")
+			// .taskAssignee("WuKong")
+			.taskAssignee("TangSeng")
+			// 获取所有的任务
+			.list();
+	list.forEach(task -> log.info("==========> id: [{}], name: [{}], assignee: [{}]", task.getId(), task.getName(), task.getAssignee()));
+}
+```
+
+执行 `void getTasksByAssignee()` 结果是 TangSeng 没有对应的任务需要处理。
+
 
 
 # Activiti7 新特性
