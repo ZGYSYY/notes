@@ -48,7 +48,7 @@ BPNM 图最终是以 XML 文件的格式保存的。
         <dependency>
             <groupId>org.activiti.dependencies</groupId>
             <artifactId>activiti-dependencies</artifactId>
-            <version>7.1.0.M6</version>
+            <version>7.1.0.M4</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
@@ -62,6 +62,12 @@ BPNM 图最终是以 XML 文件的格式保存的。
     </dependency>
 </dependencies>
 ```
+
+**Tips**: 
+
+- 目前比较稳定的版本是 `7.1.0.M4`，如果要在项目中使用，推荐使用这个版本。
+
+- 目前 `7.1.0.M6` 版本已经发现 `ProcessRuntime` 的启动流程实例 API 存在问题，官网目前还没有修复。而且该版本还要强制使用 SpringSecurity 框架。
 
 完整依赖 pom.xml 如下：
 
@@ -96,7 +102,7 @@ BPNM 图最终是以 XML 文件的格式保存的。
             <dependency>
                 <groupId>org.activiti.dependencies</groupId>
                 <artifactId>activiti-dependencies</artifactId>
-                <version>7.1.0.M6</version>
+                <version>7.1.0.M4</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -2090,6 +2096,8 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 }
 ```
 
+**Tips**: 在 Activiti7 中，用户必须要拥有 `ROLE_ACTIVITI_USER` 角色才能执行相关的操作。
+
 ## 2、API 新特性-ProcessRuntime
 
 ProcessRuntime 包含流程定义和流程实例相关的 API。
@@ -2128,7 +2136,6 @@ public void initDeploymentBPMN() {
 ```java
 package com.zgy;
 
-import com.zgy.util.SecurityUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.activiti.api.model.shared.model.VariableInstance;
 import org.activiti.api.process.model.ProcessInstance;
@@ -2159,8 +2166,6 @@ import java.util.List;
 public class Part8_ProcessRuntime {
 
 	@Autowired
-	private SecurityUtil securityUtil;
-	@Autowired
 	private ProcessRuntime processRuntime;
 
 	/**
@@ -2168,7 +2173,6 @@ public class Part8_ProcessRuntime {
 	 */
 	@Test
 	public void getProcessInstance() {
-		securityUtil.logInAs("BaJie");
 		Page<ProcessInstance> page = processRuntime.processInstances(Pageable.of(0, 100));
 		log.info("==========> 流程实例数量为: {}", page.getTotalItems());
 		List<ProcessInstance> instanceList = page.getContent();
@@ -2249,16 +2253,97 @@ public class Part8_ProcessRuntime {
 
 **Tips**: 
 
-- 启动流程实例在 `activiti-dependencies` 的 `7.1.0.M6` 版本下，存在BUG，暂时还没有被修复。因此，启动流程实例，还是使用 [3.1、启动流程实例](# 3.1、启动流程实例) 的方法来。
-- `securityUtil.logInAs("BaJie")` 感觉没有啥功能。
+- 启动流程实例在 `activiti-dependencies` 的 `7.1.0.M6` 版本下，存在BUG，暂时还没有被修复。因此，启动流程实例，要么降到 `7.1.0.M4` 版本，要么使用 [3.1、启动流程实例](# 3.1、启动流程实例) 的方法来实现。
+- `7.1.0.M6` 与 `7.1.0.M4` 数据库表结构是不同的，降到 `7.1.0.M4` 版本后，项目将启动不起来。
+- `securityUtil.logInAs("BaJie")` 在 `ProcessRuntime` API 上没有实际效果。
 
-## 2、API 新特性-TaskRuntime
+## 3、API 新特性-TaskRuntime
 
-## 3、SpringSecurity 集成
+TaskRuntime 包含任务相关 API。
+
+新建 `Part9_TaskRuntime.java` 文件，内容如下
+
+```java
+package com.zgy;
+
+import com.zgy.util.SecurityUtil;
+import lombok.extern.slf4j.Slf4j;
+import org.activiti.api.runtime.shared.query.Page;
+import org.activiti.api.runtime.shared.query.Pageable;
+import org.activiti.api.task.model.Task;
+import org.activiti.api.task.model.builders.TaskPayloadBuilder;
+import org.activiti.api.task.runtime.TaskRuntime;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
+
+import java.util.List;
+import java.util.Objects;
+
+/**
+ * <p>
+ *
+ * @author ZhangGuoYuan
+ * @since 2022/11/30
+ */
+@Slf4j
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public class Part9_TaskRuntime {
+
+	@Autowired
+	private SecurityUtil securityUtil;
+	@Autowired
+	private TaskRuntime taskRuntime;
+
+	/**
+	 * 获取当前登录用户任务
+	 */
+	@Test
+	public void getTasks() {
+		securityUtil.logInAs("WuKong");
+		Page<Task> page = taskRuntime.tasks(Pageable.of(0, 100));
+		List<Task> taskList = page.getContent();
+		for (Task task : taskList) {
+			log.info("==========> id: [{}], name: [{}], status: [{}], createDate: [{}]", task.getId(), task.getName(), task.getStatus(), task.getCreatedDate());
+			if (Objects.isNull(task.getAssignee())) {
+				log.info("==========> 当前登录用户并非是该任务的执行人，而是候选人，因此需要进行任务拾取");
+			} else {
+				log.info("==========> 当前用户{}是该任务的执行人", task.getAssignee());
+			}
+			log.info("========================================");
+		}
+	}
+
+	/**
+	 * 让当前登录用户完成任务
+	 */
+	@Test
+	public void completeTask() {
+		securityUtil.logInAs("WuKong");
+		Task task = taskRuntime.task("e3ebbb08-6b3c-11ed-99b4-8086f2267041");
+		if (Objects.isNull(task.getAssignee())) {
+			log.info("==========> 当前登录用户并非是该任务的执行人，而是候选人，因此需要进行任务拾取");
+			taskRuntime.claim(TaskPayloadBuilder
+					.claim()
+					.withTaskId(task.getId())
+					.build());
+			log.info("==========> 任务拾取成功！");
+		}
+		taskRuntime.complete(TaskPayloadBuilder
+				.complete()
+				.withTaskId(task.getId())
+				.build());
+		log.info("==========> 任务已完成！");
+	}
+}
+```
+
+## 4、SpringSecurity 集成
 
 Activiti7 的 Maven 依赖包中默认就引入了 SpringSecurity 相关依赖，因此不需要额外引入 SpringSecurity 相关依赖。
 
-在 Activiti7 中，用户必须要拥有 `ROLE_ACTIVITI_USER` 角色才能执行相关的操作。
-
-## 4、BPMN-JS 整合
+## 5、BPMN-JS 整合
 
