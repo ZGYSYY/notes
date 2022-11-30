@@ -1922,7 +1922,335 @@ public void getTasksByAssignee() {
 
 # Activiti7 新特性
 
-## 1、API 新特性-ProcessRuntime
+Activiti7 的新特性要基于 SpringSecurity 框架使用，如果项目中没有使用 SpringSecurity 框架，又要使用 Activiti7 就用 [Activiti7 核心类](# Activiti7 核心类) 的相关内容。
+
+## 1、准备工作
+
+新建 `SecurityUtil.java` 文件，内容如下
+
+```java
+package com.zgy.util;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.context.SecurityContextImpl;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.stereotype.Component;
+
+import java.util.Collection;
+import java.util.Objects;
+
+/**
+ * <p>
+ *
+ * @author ZhangGuoYuan
+ * @since 2022/11/30
+ */
+@Slf4j
+@Component
+public class SecurityUtil {
+
+	@Autowired
+	private UserDetailsService userDetailsService;
+
+	/**
+	 * 模拟用户登录
+	 *
+	 * @param username 用户名
+	 */
+	public void logInAs(String username) {
+		UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+		if (Objects.isNull(userDetails)) {
+			throw new IllegalStateException("User " + username + " doesn't exist, please provide a valid user");
+		}
+		log.info("==========> 用户: [{}] 登录成功！", username);
+		SecurityContextHolder.setContext(new SecurityContextImpl(new Authentication() {
+			@Override
+			public Collection<? extends GrantedAuthority> getAuthorities() {
+				return userDetails.getAuthorities();
+			}
+
+			@Override
+			public Object getCredentials() {
+				return userDetails.getPassword();
+			}
+
+			@Override
+			public Object getDetails() {
+				return userDetails;
+			}
+
+			@Override
+			public Object getPrincipal() {
+				return userDetails;
+			}
+
+			@Override
+			public boolean isAuthenticated() {
+				return true;
+			}
+
+			@Override
+			public void setAuthenticated(boolean b) throws IllegalArgumentException {
+
+			}
+
+			@Override
+			public String getName() {
+				return userDetails.getUsername();
+			}
+		}));
+	}
+}
+```
+
+新建 `DemoApplicationConfiguration.java` 文件，内容如下
+
+```java
+package com.zgy.config;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * <p>
+ *
+ * @author ZhangGuoYuan
+ * @since 2022/11/30
+ */
+@Slf4j
+@Configuration
+public class DemoApplicationConfiguration {
+
+	@Bean
+	public UserDetailsService myUserDetailsService() {
+		InMemoryUserDetailsManager detailsManager = new InMemoryUserDetailsManager();
+		String[][] usersGroupsAndRoles = {
+				{"admin", "123456", "ROLE_ACTIVITI_USER"},
+				{"BaJie", "123456", "ROLE_ACTIVITI_USER"},
+				{"ShaSeng", "123456", "ROLE_ACTIVITI_USER"},
+				{"WuKong", "123456", "ROLE_ACTIVITI_USER"},
+				{"TangSeng", "123456", "ROLE_ACTIVITI_USER"},
+		};
+
+		for (String[] user : usersGroupsAndRoles) {
+			List<String> authoritiesStrings = Arrays.asList(Arrays.copyOfRange(user, 2, user.length));
+			log.info("==========> 用户: {} 的角色有: {}", user[0], authoritiesStrings);
+			detailsManager.createUser(new User(user[0], passwordEncoder().encode(user[1]), authoritiesStrings.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList())));
+		}
+
+		return detailsManager;
+	}
+
+	@Bean
+	public PasswordEncoder passwordEncoder() {
+		return new BCryptPasswordEncoder();
+	}
+}
+```
+
+修改 `UserDetailsServiceImpl.java` 文件，修改内容如下
+
+```java
+package com.zgy.service.impl;
+
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
+
+/**
+ * <p>
+ *
+ * @author ZhangGuoYuan
+ * @since 2022-8-22
+ */
+// @Service
+public class UserDetailsServiceImpl implements UserDetailsService {
+
+	@Override
+	public UserDetails loadUserByUsername(String s) throws UsernameNotFoundException {
+		return null;
+	}
+}
+```
+
+## 2、API 新特性-ProcessRuntime
+
+ProcessRuntime 包含流程定义和流程实例相关的 API。
+
+在 `resources/bpmn` 目录下新建 `Part8_ProcessRuntime.bpmn20.xml` 文件，内容如下
+
+![image-20221130144933331](Activiti7.assets/image-20221130144933331.png)
+
+![image-20221130145024611](Activiti7.assets/image-20221130145024611.png)
+
+对 `Part8_ProcessRuntime.bpmn20.xml` 文件进行流程部署，关键代码如下
+
+```java
+@Autowired
+private RepositoryService repositoryService;
+
+/**
+ * 初始化流程部署
+ */
+@Test
+public void initDeploymentBPMN() {
+	Deployment deployment = repositoryService.createDeployment()
+			// 设置 BPMN 文件
+			.addClasspathResource("bpmn/Part8_ProcessRuntime.bpmn20.xml")
+			// 设置流程部署名称
+			.name("流程部署测试 processRuntime")
+			.deploy();
+	log.info("==========> name: [{}]", deployment.getName());
+}
+```
+
+执行 `initDeploymentBPMN`。
+
+新建 `Part8_ProcessRuntime.java` 文件，内容如下
+
+```java
+package com.zgy;
+
+import com.zgy.util.SecurityUtil;
+import lombok.extern.slf4j.Slf4j;
+import org.activiti.api.model.shared.model.VariableInstance;
+import org.activiti.api.process.model.ProcessInstance;
+import org.activiti.api.process.model.builders.ProcessPayloadBuilder;
+import org.activiti.api.process.model.builders.StartProcessPayloadBuilder;
+import org.activiti.api.process.model.payloads.StartProcessPayload;
+import org.activiti.api.process.model.payloads.SuspendProcessPayload;
+import org.activiti.api.process.runtime.ProcessRuntime;
+import org.activiti.api.runtime.shared.query.Page;
+import org.activiti.api.runtime.shared.query.Pageable;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
+
+import java.util.List;
+
+/**
+ * <p>
+ *
+ * @author ZhangGuoYuan
+ * @since 2022/11/30
+ */
+@Slf4j
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public class Part8_ProcessRuntime {
+
+	@Autowired
+	private SecurityUtil securityUtil;
+	@Autowired
+	private ProcessRuntime processRuntime;
+
+	/**
+	 * 获取流程实例
+	 */
+	@Test
+	public void getProcessInstance() {
+		securityUtil.logInAs("BaJie");
+		Page<ProcessInstance> page = processRuntime.processInstances(Pageable.of(0, 100));
+		log.info("==========> 流程实例数量为: {}", page.getTotalItems());
+		List<ProcessInstance> instanceList = page.getContent();
+		for (ProcessInstance instance : instanceList) {
+			log.info("==========> id: [{}], name: [{}], processDefinitionKey: [{}], startDate: [{}], status: [{}]",
+					instance.getId(), instance.getName(), instance.getProcessDefinitionKey(), instance.getStartDate(), instance.getStatus());
+		}
+	}
+
+	/**
+	 * 启动流程实例
+	 */
+	@Test
+	public void startProcessInstance() {
+		securityUtil.logInAs("BaJie");
+		ProcessInstance processInstance = processRuntime.start(ProcessPayloadBuilder
+				.start()
+				.withProcessDefinitionKey("myProcess_ProcessRuntime")
+				// .withName("流程实例名称")
+				// .withBusinessKey("自定义 bKey")
+				// .withVariable("", "")
+				.build());
+		log.info("==========> 流程实例启动成功，id: [{}], processDefinitionKey: [{}], status: [{}]", processInstance.getId(), processInstance.getProcessDefinitionKey(), processInstance.getStatus());
+	}
+
+	/**
+	 * 删除流程实例
+	 */
+	@Test
+	public void delProcessInstance() {
+		processRuntime.delete(ProcessPayloadBuilder
+				.delete()
+				.withProcessInstanceId("a10bdfc2-7083-11ed-bcdd-8286f2267041")
+				.build());
+		log.info("==========> 流程实例删除成功！");
+	}
+
+	/**
+	 * 挂起流程实例
+	 */
+	@Test
+	public void suspendProcessInstance() {
+		processRuntime.suspend(ProcessPayloadBuilder
+				.suspend()
+				.withProcessInstanceId("42c40402-6ffb-11ed-9eaf-8286f2267041")
+				.build());
+		log.info("==========> 流程实例挂起成功！");
+	}
+
+	/**
+	 * 激活流程实例
+	 */
+	@Test
+	public void resumeProcessInstance() {
+		processRuntime.resume(ProcessPayloadBuilder
+				.resume()
+				.withProcessInstanceId("42c40402-6ffb-11ed-9eaf-8286f2267041")
+				.build());
+		log.info("==========> 流程实例激活成功！");
+	}
+
+	/**
+	 * 获取流程实例参数
+	 */
+	@Test
+	public void getVariables() {
+		List<VariableInstance> variables = processRuntime.variables(ProcessPayloadBuilder
+				.variables()
+				.withProcessInstanceId("42c40402-6ffb-11ed-9eaf-8286f2267041")
+				.build());
+
+		for (VariableInstance variable : variables) {
+			log.info("==========> taskId: [{}], processInstanceId: [{}], name: [{}]", variable.getTaskId(), variable.getProcessInstanceId(), variable.getName());
+		}
+	}
+}
+```
+
+**Tips**: 
+
+- 启动流程实例在 `activiti-dependencies` 的 `7.1.0.M6` 版本下，存在BUG，暂时还没有被修复。因此，启动流程实例，还是使用 [3.1、启动流程实例](# 3.1、启动流程实例) 的方法来。
+- `securityUtil.logInAs("BaJie")` 感觉没有啥功能。
 
 ## 2、API 新特性-TaskRuntime
 
