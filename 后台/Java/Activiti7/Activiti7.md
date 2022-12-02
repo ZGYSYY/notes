@@ -2345,5 +2345,577 @@ public class Part9_TaskRuntime {
 
 Activiti7 的 Maven 依赖包中默认就引入了 SpringSecurity 相关依赖，因此不需要额外引入 SpringSecurity 相关依赖。
 
+### 4.1、最简实现
+
+删除 `UserDetailsServiceImpl.java` 文件，修改 `DemoApplicationConfiguration.java` 文件，修改内容如下
+
+```java
+package com.zgy.config;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Bean;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * <p>
+ *
+ * @author ZhangGuoYuan
+ * @since 2022/11/30
+ */
+@Slf4j
+// @Configuration
+public class DemoApplicationConfiguration {
+
+	@Bean
+	public UserDetailsService myUserDetailsService() {
+		InMemoryUserDetailsManager detailsManager = new InMemoryUserDetailsManager();
+		String[][] usersGroupsAndRoles = {
+				{"admin", "123456", "ROLE_ACTIVITI_USER"},
+				{"BaJie", "123456", "ROLE_ACTIVITI_USER"},
+				{"ShaSeng", "123456", "ROLE_ACTIVITI_USER"},
+				{"WuKong", "123456", "ROLE_ACTIVITI_USER"},
+				{"TangSeng", "123456", "ROLE_ACTIVITI_USER"},
+		};
+
+		for (String[] user : usersGroupsAndRoles) {
+			List<String> authoritiesStrings = Arrays.asList(Arrays.copyOfRange(user, 2, user.length));
+			log.info("==========> 用户: {} 的角色有: {}", user[0], authoritiesStrings);
+			detailsManager.createUser(new User(user[0], passwordEncoder().encode(user[1]), authoritiesStrings.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList())));
+		}
+
+		return detailsManager;
+	}
+
+	@Bean
+	public PasswordEncoder passwordEncoder() {
+		return new BCryptPasswordEncoder();
+	}
+}
+```
+
+新建 `HelloController.java` 文件，内容如下
+
+```java
+package com.zgy.controller;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+/**
+ * <p>
+ *
+ * @author ZhangGuoYuan
+ * @since 2022/11/30
+ */
+@RestController
+public class HelloController {
+
+	@GetMapping("/hello")
+	public ResponseEntity<String> hello() {
+		return ResponseEntity.ok("Activiti7 入门到放弃！");
+	}
+}
+```
+
+新建 `SecurityConfig.java` 文件，内容如下
+
+```java
+package com.zgy.security;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+/**
+ * <p>
+ *
+ * @author ZhangGuoYuan
+ * @since 2022/12/1
+ */
+@Configuration
+public class SecurityConfig {
+
+	@Bean
+	public PasswordEncoder passwordEncoder() {
+		return new BCryptPasswordEncoder();
+	}
+}
+```
+
+新建 `MyUserDetailsService.java` 文件，内容如下
+
+```java
+package com.zgy.security;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
+
+/**
+ * <p>
+ *
+ * @author ZhangGuoYuan
+ * @since 2022/11/30
+ */
+@Slf4j
+@Component
+public class MyUserDetailsService implements UserDetailsService {
+
+	@Autowired
+	private PasswordEncoder passwordEncoder;
+
+	@Override
+	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+		User user = new User(
+				// 登录用户名
+				username,
+				// 密码一定要加密，否则无法认证成功
+				passwordEncoder.encode("123456"),
+				// 角色列表
+				AuthorityUtils.commaSeparatedStringToAuthorityList("ROLE_ACTIVITI_USER")
+		);
+
+		return user;
+	}
+}
+```
+
+启动服务，访问 http://localhost:9090/hello，效果如下
+
+![image-20221201100055831](Activiti7.assets/image-20221201100055831.png)
+
+输入账号：user，密码：123456，效果如下
+
+![image-20221201100435311](Activiti7.assets/image-20221201100435311.png)
+
+### 4.2、集成数据库
+
+修改 `pom.xml` 文件，新增内容如下
+
+```xml
+<dependency>
+    <groupId>org.mybatis.spring.boot</groupId>
+    <artifactId>mybatis-spring-boot-starter</artifactId>
+    <version>2.1.4</version>
+    <exclusions>
+        <exclusion>
+            <groupId>org.mybatis</groupId>
+            <artifactId>mybatis</artifactId>
+        </exclusion>
+    </exclusions>
+</dependency>
+<dependency>
+    <groupId>org.mybatis</groupId>
+    <artifactId>mybatis</artifactId>
+    <version>3.5.9</version>
+</dependency>
+```
+
+新建 `UserInfo.java` 文件，内容如下
+
+```java
+package com.zgy.pojo;
+
+import lombok.Data;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.stream.Collectors;
+
+/**
+ * <p>
+ *
+ * @author ZhangGuoYuan
+ * @since 2022/12/1
+ */
+@Data
+public class UserInfo implements UserDetails {
+	/**
+	 * 唯一标识id
+	 */
+	private Long id;
+
+	/**
+	 * 姓名
+	 */
+	private String name;
+
+	/**
+	 * 用户名
+	 */
+	private String username;
+
+	/**
+	 * 地址
+	 */
+	private String address;
+
+	/**
+	 * 密码
+	 */
+	private String password;
+
+	/**
+	 * 角色
+	 */
+	private String roles;
+
+	@Override
+	public Collection<? extends GrantedAuthority> getAuthorities() {
+		if (StringUtils.isBlank(roles)) {
+			return Collections.emptyList();
+		}
+
+		return Arrays.stream(roles.split(",")).map(SimpleGrantedAuthority::new).collect(Collectors.toList());
+	}
+
+	@Override
+	public String getPassword() {
+		return password;
+	}
+
+	@Override
+	public String getUsername() {
+		return username;
+	}
+
+	@Override
+	public boolean isAccountNonExpired() {
+		return true;
+	}
+
+	@Override
+	public boolean isAccountNonLocked() {
+		return true;
+	}
+
+	@Override
+	public boolean isCredentialsNonExpired() {
+		return true;
+	}
+
+	@Override
+	public boolean isEnabled() {
+		return true;
+	}
+}
+```
+
+修改 `MyUserDetailsService.java` 文件，修改内容如下
+
+```java
+package com.zgy.security;
+
+import com.zgy.mapper.UserInfoMapper;
+import com.zgy.pojo.UserInfo;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
+
+import java.util.Objects;
+
+/**
+ * <p>
+ *
+ * @author ZhangGuoYuan
+ * @since 2022/11/30
+ */
+@Slf4j
+@Component
+public class MyUserDetailsService implements UserDetailsService {
+
+	@Autowired
+	private PasswordEncoder passwordEncoder;
+	@Autowired
+	private UserInfoMapper userInfoMapper;
+
+	@Override
+	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+		/*User user = new User(
+				// 登录用户名
+				username,
+				// 密码一定要加密，否则无法认证成功
+				passwordEncoder.encode("123456"),
+				// 角色列表
+				AuthorityUtils.commaSeparatedStringToAuthorityList("ROLE_ACTIVITI_USER")
+		);
+
+		return user;*/
+
+		UserInfo userInfo = userInfoMapper.selectByUsername(username);
+		if (Objects.isNull(userInfo)) {
+			throw new UsernameNotFoundException("用户不存在");
+		}
+
+		return userInfo;
+	}
+}
+```
+
+新建 `UserInfoMapper.java` 文件，内容如下
+
+```java
+package com.zgy.mapper;
+
+import com.zgy.pojo.UserInfo;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Select;
+
+/**
+ * <p>
+ *
+ * @author ZhangGuoYuan
+ * @since 2022/12/1
+ */
+@Mapper
+public interface UserInfoMapper {
+
+	@Select("SELECT * FROM user_info WHERE username = #{username}")
+	UserInfo selectByUsername(String username);
+}
+```
+
+创建 `user_info` 表，SQL 脚本如下
+
+```sql
+CREATE TABLE `user_info` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '主键id',
+  `name` varchar(32) COLLATE utf8mb4_general_ci NOT NULL COMMENT '姓名',
+  `username` varchar(32) COLLATE utf8mb4_general_ci NOT NULL COMMENT '用户名',
+  `address` varchar(255) COLLATE utf8mb4_general_ci NOT NULL COMMENT '地址',
+  `password` varchar(255) COLLATE utf8mb4_general_ci NOT NULL COMMENT '密码',
+  `roles` varchar(255) COLLATE utf8mb4_general_ci NOT NULL COMMENT '角色列表',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='用户信息表';
+
+INSERT INTO `activiti7_lab`.`user_info`(`id`, `name`, `username`, `address`, `password`, `roles`) VALUES (1, '八戒', 'BaJie', '高老庄', '$2a$10$Henx4gLA2PZPAEwPWKhsB.4XMSINYLCBAuIlm2Yz9mevfXdEq2pEK', 'ROLE_ACTIVITI_USER');
+INSERT INTO `activiti7_lab`.`user_info`(`id`, `name`, `username`, `address`, `password`, `roles`) VALUES (2, '悟空', 'WuKong', '花果山', '$2a$10$Henx4gLA2PZPAEwPWKhsB.4XMSINYLCBAuIlm2Yz9mevfXdEq2pEK', 'ROLE_ACTIVITI_USER');
+INSERT INTO `activiti7_lab`.`user_info`(`id`, `name`, `username`, `address`, `password`, `roles`) VALUES (3, '沙僧', 'ShangSeng', '流沙河', '$2a$10$Henx4gLA2PZPAEwPWKhsB.4XMSINYLCBAuIlm2Yz9mevfXdEq2pEK', 'ROLE_ACTIVITI_USER');
+INSERT INTO `activiti7_lab`.`user_info`(`id`, `name`, `username`, `address`, `password`, `roles`) VALUES (4, '唐僧', 'TangSeng', '东土大唐', '$2a$10$Henx4gLA2PZPAEwPWKhsB.4XMSINYLCBAuIlm2Yz9mevfXdEq2pEK', 'ROLE_ACTIVITI_USER,ROLE_ADMIN');
+```
+
+启动服务，访问 http://localhost:9090/hello，效果如下
+
+![image-20221201100055831](Activiti7.assets/image-20221201100055831.png)
+
+输入账号：BaJie，密码：123456，效果如下
+
+![image-20221201100435311](Activiti7.assets/image-20221201100435311.png)
+
+### 4.3、SpringSecurity 配置相关
+
+新建 `LoginSuccessHandler.java` 文件，内容如下
+
+```java
+package com.zgy.security;
+
+import cn.hutool.json.JSONUtil;
+import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.stereotype.Component;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.HashMap;
+
+/**
+ * <p>
+ *
+ * @author ZhangGuoYuan
+ * @since 2022/12/1
+ */
+@Component
+public class LoginSuccessHandler implements AuthenticationSuccessHandler {
+
+	@Override
+	public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+		response.setContentType(MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8");
+		HashMap<String, Object> result = new HashMap<>();
+		result.put("code", 200);
+		result.put("data", "用户 " + authentication.getName() + " 登录成功");
+		response.getWriter().write(JSONUtil.toJsonStr(result));
+	}
+}
+```
+
+新建 `LoginFailureHandler.java` 文件，内容如下
+
+```java
+package com.zgy.security;
+
+import cn.hutool.json.JSONUtil;
+import org.springframework.http.MediaType;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.stereotype.Component;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.HashMap;
+
+/**
+ * <p>
+ *
+ * @author ZhangGuoYuan
+ * @since 2022/12/1
+ */
+@Component
+public class LoginFailureHandler implements AuthenticationFailureHandler {
+
+	@Override
+	public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException e) throws IOException, ServletException {
+		response.setContentType(MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8");
+		HashMap<String, Object> result = new HashMap<>();
+		result.put("code", 500);
+		result.put("data", "登录失败，错误信息为：" + e.getMessage());
+		response.getWriter().write(JSONUtil.toJsonStr(result));
+	}
+}
+```
+
+新建 `SecurityController.java` 文件，内容如下
+
+```java
+package com.zgy.security;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * <p>
+ *
+ * @author ZhangGuoYuan
+ * @since 2022/12/2
+ */
+@RestController
+@RequestMapping
+public class SecurityController {
+
+	@GetMapping("/login.html")
+	public ResponseEntity<Map<String, Object>> login() {
+		Map<String, Object> result = new HashMap<>();
+		result.put("code", 200);
+		result.put("data", "这个是登录页面。。。。");
+		return ResponseEntity.ok(result);
+	}
+}
+```
+
+修改 `SecurityConfig.java` 文件，修改内容如下
+
+```java
+package com.zgy.security;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+/**
+ * <p>
+ *
+ * @author ZhangGuoYuan
+ * @since 2022/12/1
+ */
+@Configuration
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+
+	@Autowired
+	private LoginSuccessHandler loginSuccessHandler;
+	@Autowired
+	private LoginFailureHandler loginFailureHandler;
+
+	@Bean
+	public PasswordEncoder passwordEncoder() {
+		return new BCryptPasswordEncoder();
+	}
+
+	@Override
+	protected void configure(HttpSecurity http) throws Exception {
+		http.
+				// 表单登录设置
+				formLogin()
+				// 设置登录请求路径，当未鉴权时会跳转的页面
+				.loginPage("/login.html").permitAll()
+				// 自定义登录的处理路径，默认是 /login，表单在提交时，action 的值要和这个值一致
+				.loginProcessingUrl("/login.do").permitAll()
+				// 设置登录成功后的处理逻辑
+				.successHandler(loginSuccessHandler)
+				// 设置登录失败后的处理逻辑
+				.failureHandler(loginFailureHandler)
+				.and()
+				// 权限设置
+				.authorizeRequests()
+				// 设置任意请求都不用鉴权
+				.anyRequest().authenticated()
+				.and()
+				// 退出登录设置
+				.logout()
+				// 不用鉴权
+				.permitAll()
+				.and()
+				// 禁用 csrf
+				.csrf().disable()
+				// 请求头设置
+				.headers()
+				// 禁用 X-Frame-Options
+				.frameOptions().disable();
+	}
+}
+```
+
+启动服务，使用浏览器访问 http://localhost:9090/hello，效果如下
+
+![image-20221202234918547](Activiti7.assets/image-20221202234918547.png)
+
+使用 Postman 访问 http://localhost:9090/login.do 输入一个错误的密码，效果如下
+
+![image-20221202235407677](Activiti7.assets/image-20221202235407677.png)
+
+使用 Postman 访问 http://localhost:9090/login.do 输入一个正确的密码，效果如下
+
+![image-20221202235437806](Activiti7.assets/image-20221202235437806.png)
+
 ## 5、BPMN-JS 整合
 
