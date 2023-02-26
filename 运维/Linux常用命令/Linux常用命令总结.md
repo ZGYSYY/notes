@@ -1,4 +1,8 @@
 <center><h1>Linux常用命令总结</h1></center>
+# 目录
+
+[TOC]
+
 # yum常用命令
 
 - yum install 【软件包名】[-y]：安装指定的软件包，如果加上`-y`表示不询问安装。
@@ -6,6 +10,7 @@
 - yum list installed：列出所用安装过的软件，可以配合`|`和`grep`命令做过滤。
 - yum list：列出所用软件，可以配合`|`和`grep`命令做过滤。
 - yum search 【软件包名】：查找指定的软件包。
+- yum repolist all：查看软件库列表。
 - yum clean all：删除缓存。
 - yum update ：更新所用的软件包，如果后面添加【软件包名】就是更新指定的软件包。
 
@@ -108,6 +113,111 @@ setenforce 0
 永久关闭
 
 修改/etc/selinux/config文件中的SELINUX="enforcing" 为 disabled ，然后重启。
+
+# 防火墙
+
+## 1、iptables
+
+### 1.1、简介
+
+iptables 不是真正的防火墙，它只是用来定义防火墙策略的防火墙管理工具而已，真正实现防火墙功能的是内核层面的 netfilter 网络过滤器。
+
+### 1.2、使用
+
+1、清除规则
+
+```bash
+iptables -F # 清除所有的已订定的规则
+iptables -X # 清除自定义的 table
+iptables -Z # 将所有的 chain 的计数与流量统计都归零
+```
+
+2、定义预设政策（policy）
+
+当封包不在设定的规则之内时，则该封包的通过与否，是以 Policy 的设定为准。
+
+通常建议将 INPUT 设置为 DROP，OUTPUT 和 FORWARD 设置为 ACCEPT。
+
+范例：将本机的 INPUT 设定为 DROP ，其他设定为 ACCEPT，命令如下：
+
+```bash
+iptables -P INPUT DROP # 该命令切忌不要在远程客户端执行
+iptables -P OUTPUT ACCEPT
+iptables -P FORWARD ACCEPT
+```
+
+3、范例
+
+3.1、设定 lo 成为受信任的装置，亦即进出 lo 的封包都予以接受，命令如下：
+
+```bash
+iptables -A INPUT -i lo -j ACCEPT
+```
+
+参数解释：
+
+-A：新增加一条规则，该规则增加在原本规则的最后面。例如原本已经有四条规则，使用 -A 就可以加上第五条规则。
+
+-i：封包所进入的那个网络接口，例如 eth0，lo 等接口。需与 INPUT 链配合。
+
+-j：后面接动作，主要的动作有接受(ACCEPT)、丢弃(DROP)、拒绝(REJECT)以及记录(LOG)。
+
+3.2、只要是来自 192.168.1.0/24 网域的封包都予以接受，命令如下：
+
+```bash
+iptables -A INPUT -i ens33 -s 192.168.1.0/24 -j ACCEPT
+```
+
+参数解释：
+
+-s：设定此规则之封包的来源，可指定单纯的 IP 或网域。IP格式为 192.168.0.100。网域格式为 192.168.0.0/24 或者 192.168.0.0/255.255.255.0 均可。若规范为“不许”时，则加上 ! 即可，格式为 !192.168.100.0/24。
+
+3.3、只要是来自 192.168.1.6 就接受，但 192.168.1.8 这个恶意来源就丢弃，命令如下：
+
+```bash
+iptables -A INPUT -i ens33 -s 192.168.1.6 -j ACCEPT
+iptables -A INPUT -i ens33 -s 192.168.1.8 -j DROP
+```
+
+3.4、想要联机进入本机 port 为 21 的封包都抵挡掉，命令如下：
+
+```
+iptables -A INPUT -i ens33 -p tcp --dport 21 -j DROP
+```
+
+参数解释：
+
+-p：封包的协议，有 tcp 和 udp。
+
+--dport：封包目标端口号，必须要和 -p 一起使用。
+
+3.5、想要联机进入本机的 udp 协议下的 137 和 138 端口，以及 tcp 协议下的 139 和 445 端口，命令如下：
+
+```bash
+iptables -A INPUT -i ens33 -p udp --dport 137:138 -j ACCEPT
+iptables -A INPUT -i ens33 -p tcp --dport 139 -j ACCEPT
+iptables -A INPUT -i ens33 -p tcp --dport 445 -j ACCEPT
+```
+
+3.6、只要来自 192.168.1.0/24 的 1024:65535 端口的封包，且想要联机到本机的 ssh port 就予以抵挡，命令如下：
+
+```bash
+iptables -A INPUT -i ens33 -p tcp -s 192.168.1.0/24 --sport 1024:65534 --dport ssh -j DROP
+```
+
+3.7、将来自任何地方来源 port 1:1023 的主动联机到本机端的 1:1023 联机丢弃，命令如下：
+
+```bash
+iptables -A INPUT -i ens33 -p tcp --sport 1:1023 --dport 1:1023 --syn -j DROP
+```
+
+参数解释：
+
+--syn：TCP 建立握手的旗标。
+
+
+
+### 1.3、常见问题
 
 # CentOS7如何设置防火墙
 
@@ -661,3 +771,46 @@ ts：表示缩进空格数。
 expandtab：表示按退格键时，按一次删除一个空格。
 
 autoindent：表示开启自动缩进。
+
+# Linux 常用软件
+
+1、net-tools：含有 ifconfig 命令。
+
+# CentOS 7 网络配置
+
+1、查看网卡列表
+
+```bash
+nmcli connection show
+```
+
+结果如下：
+
+![image-20230226173235185](Linux%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4%E6%80%BB%E7%BB%93.assets/image-20230226173235185.png)
+
+2、配置网络参数
+
+```bash
+nmcli connection modify ens33 \
+connection.autoconnect yes \ # 开机时启动
+ipv4.method manual \ # 手动设定网络参数，自动是 auto
+ipv4.addresses 192.168.2.3/24 \ # 设置 ip 地址
+ipv4.gateway 192.168.2.2 \ # 设置 网关地址
+ipv4.dns 114.114.114.114 # 设置 dns
+```
+
+3、使配置生效
+
+```bash
+nmcli connection up ens33
+```
+
+4、测试
+
+```bash
+ping www.baidu.com
+```
+
+结果如下：
+
+![image-20230226173755986](Linux%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4%E6%80%BB%E7%BB%93.assets/image-20230226173755986.png)
