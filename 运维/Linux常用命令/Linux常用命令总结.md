@@ -124,7 +124,24 @@ iptables 不是真正的防火墙，它只是用来定义防火墙策略的防�
 
 ### 1.2、使用
 
-1、清除规则
+1.2.1、关闭 firewall 服务
+
+```bash
+systemctl stop firewalld.service # 停止服务
+systemctl disable firewalld.service # 禁用开机自启
+systemctl status firewalld.service # 查看状态
+```
+
+1.2.2、安装 iptables-service 服务
+
+```bash
+yum -y install iptables-services # 安装服务
+systemctl start iptables # 启动服务
+systemctl enable iptables # 启动开机自启
+systemctl status iptables # 查看状态
+```
+
+1.2.3、清除规则
 
 ```bash
 iptables -F # 清除所有的已订定的规则
@@ -132,7 +149,7 @@ iptables -X # 清除自定义的 table
 iptables -Z # 将所有的 chain 的计数与流量统计都归零
 ```
 
-2、定义预设政策（policy）
+4、定义预设政策（policy）
 
 当封包不在设定的规则之内时，则该封包的通过与否，是以 Policy 的设定为准。
 
@@ -146,9 +163,9 @@ iptables -P OUTPUT ACCEPT
 iptables -P FORWARD ACCEPT
 ```
 
-3、范例
+5、范例
 
-3.1、设定 lo 成为受信任的装置，亦即进出 lo 的封包都予以接受，命令如下：
+5.1、设定 lo 成为受信任的装置，亦即进出 lo 的封包都予以接受，命令如下：
 
 ```bash
 iptables -A INPUT -i lo -j ACCEPT
@@ -156,13 +173,13 @@ iptables -A INPUT -i lo -j ACCEPT
 
 参数解释：
 
--A：新增加一条规则，该规则增加在原本规则的最后面。例如原本已经有四条规则，使用 -A 就可以加上第五条规则。
+- -A：新增加一条规则，该规则增加在原本规则的最后面。例如原本已经有四条规则，使用 -A 就可以加上第五条规则。
 
--i：封包所进入的那个网络接口，例如 eth0，lo 等接口。需与 INPUT 链配合。
+- -i：封包所进入的那个网络接口，例如 eth0，lo 等接口。需与 INPUT 链配合。
 
--j：后面接动作，主要的动作有接受(ACCEPT)、丢弃(DROP)、拒绝(REJECT)以及记录(LOG)。
+- -j：后面接动作，主要的动作有接受(ACCEPT)、丢弃(DROP)、拒绝(REJECT)以及记录(LOG)。
 
-3.2、只要是来自 192.168.1.0/24 网域的封包都予以接受，命令如下：
+5.2、只要是来自 192.168.1.0/24 网域的封包都予以接受，命令如下：
 
 ```bash
 iptables -A INPUT -i ens33 -s 192.168.1.0/24 -j ACCEPT
@@ -170,16 +187,16 @@ iptables -A INPUT -i ens33 -s 192.168.1.0/24 -j ACCEPT
 
 参数解释：
 
--s：设定此规则之封包的来源，可指定单纯的 IP 或网域。IP格式为 192.168.0.100。网域格式为 192.168.0.0/24 或者 192.168.0.0/255.255.255.0 均可。若规范为“不许”时，则加上 ! 即可，格式为 !192.168.100.0/24。
+- -s：设定此规则之封包的来源，可指定单纯的 IP 或网域。IP格式为 192.168.0.100。网域格式为 192.168.0.0/24 或者 192.168.0.0/255.255.255.0 均可。若规范为“不许”时，则加上 ! 即可，格式为 !192.168.100.0/24。
 
-3.3、只要是来自 192.168.1.6 就接受，但 192.168.1.8 这个恶意来源就丢弃，命令如下：
+5.3、只要是来自 192.168.1.6 就接受，但 192.168.1.8 这个恶意来源就丢弃，命令如下：
 
 ```bash
 iptables -A INPUT -i ens33 -s 192.168.1.6 -j ACCEPT
 iptables -A INPUT -i ens33 -s 192.168.1.8 -j DROP
 ```
 
-3.4、想要联机进入本机 port 为 21 的封包都抵挡掉，命令如下：
+5.4、想要联机进入本机 port 为 21 的封包都抵挡掉，命令如下：
 
 ```
 iptables -A INPUT -i ens33 -p tcp --dport 21 -j DROP
@@ -187,11 +204,11 @@ iptables -A INPUT -i ens33 -p tcp --dport 21 -j DROP
 
 参数解释：
 
--p：封包的协议，有 tcp 和 udp。
+- -p：封包的协议，有 tcp 和 udp。
 
---dport：封包目标端口号，必须要和 -p 一起使用。
+- --dport：封包目标端口号，必须要和 -p 一起使用。
 
-3.5、想要联机进入本机的 udp 协议下的 137 和 138 端口，以及 tcp 协议下的 139 和 445 端口，命令如下：
+5.5、想要联机进入本机的 udp 协议下的 137 和 138 端口，以及 tcp 协议下的 139 和 445 端口，命令如下：
 
 ```bash
 iptables -A INPUT -i ens33 -p udp --dport 137:138 -j ACCEPT
@@ -199,13 +216,13 @@ iptables -A INPUT -i ens33 -p tcp --dport 139 -j ACCEPT
 iptables -A INPUT -i ens33 -p tcp --dport 445 -j ACCEPT
 ```
 
-3.6、只要来自 192.168.1.0/24 的 1024:65535 端口的封包，且想要联机到本机的 ssh port 就予以抵挡，命令如下：
+5.6、只要来自 192.168.1.0/24 的 1024:65535 端口的封包，且想要联机到本机的 ssh port 就予以抵挡，命令如下：
 
 ```bash
 iptables -A INPUT -i ens33 -p tcp -s 192.168.1.0/24 --sport 1024:65534 --dport ssh -j DROP
 ```
 
-3.7、将来自任何地方来源 port 1:1023 的主动联机到本机端的 1:1023 联机丢弃，命令如下：
+5.7、将来自任何地方来源 port 1:1023 的主动联机到本机端的 1:1023 联机丢弃，命令如下：
 
 ```bash
 iptables -A INPUT -i ens33 -p tcp --sport 1:1023 --dport 1:1023 --syn -j DROP
@@ -213,19 +230,52 @@ iptables -A INPUT -i ens33 -p tcp --sport 1:1023 --dport 1:1023 --syn -j DROP
 
 参数解释：
 
---syn：TCP 建立握手的旗标。
+- --syn：TCP 建立握手的旗标。
 
+5.8、只要已建立或相关封包就予以通过，只要是不合法封包就丢弃，命令如下：
 
+```bash
+iptables -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+iptables -A INPUT -m state --state INVALID -j DROP
+```
 
-### 1.3、常见问题
+参数解释：
 
-# CentOS7如何设置防火墙
+- -m：外挂模块，有 state 和 mac 两个值，state：状态模块，mac：网卡硬件地址。
+
+- --state：一些封包的状态，主要有：
+    - INVALID：无效的封包，例如数据破损的封包状态；
+    - ESTABLISHED：已经联机成功的联机状态；
+    - NEW：想要新建立联机的封包状态；
+    - RELATED：表示这个封包是与我们主机发送出去的封包有关（常用）。
+
+5.9、针对局域网络内的 aa:bb:cc:dd:ee:ff 主机开放其联机，命令如下：
+
+```bash
+	iptables -A INPUT -m mac --mac-source aa:bb:cc:dd:ee:ff -j ACCEPT
+```
+
+参数解释：
+
+- --mac-source：来源主机的 mac 地址。
+
+6、保存规则
+
+通常使用 iptables 设置规则，在系统重启后就会失效，想要永久有效，需要执行如下命令：
+
+```bash
+service iptables save
+```
+
+## 2、firewall
+
+### 2.1、简介
 
 在旧版本的CentOS中，是使用 iptables 命令来设置防火墙的。但是，从CentOS7开始，默认就没有安装iptables，而是改用firewall来配置防火墙。
 
 firewall的配置文件是以xml的格式，存储在 /usr/lib/firewalld/ 和 /etc/firewalld/ 目录中。
 
-**系统配置目录**
+2.1.1、系统配置目录
 
 ```bash
 /usr/lib/firewalld/
@@ -233,7 +283,7 @@ firewall的配置文件是以xml的格式，存储在 /usr/lib/firewalld/ 和 /e
 /usr/lib/firewalld/zones
 ```
 
-**用户配置目录**
+2.1.2、用户配置目录
 
 ```bash
 /etc/firewalld/
@@ -241,11 +291,11 @@ firewall的配置文件是以xml的格式，存储在 /usr/lib/firewalld/ 和 /e
 /etc/firewalld/zones
 ```
 
-**设置防火墙**
+### 2.2、使用
 
-设置防火墙的方式有两种：firewall命令和直接修改配置文件。
+设置防火墙的方式有两种：firewall 命令和直接修改配置文件。
 
-推荐使用firewall命令来设置防火墙。
+推荐使用 firewall 命令来设置防火墙。
 
 注意： 对防火墙所做的更改，必须重启防火墙服务，才会立即生效。命令如下：
 
@@ -253,35 +303,31 @@ firewall的配置文件是以xml的格式，存储在 /usr/lib/firewalld/ 和 /e
 service firewalld restart 或 systemctl restart firewalld
 ```
 
-## 设置防火墙的方式有两种
-
-### 1. firewall命令
+2.1、firewall 命令
 
 ```bash
-# 对外开放3306端口，供外部的计算机访问
-# 该命令方式添加的端口，可在/etc/firewalld/zones中的对应配置文件中得到体现
+# 对外开放 3306 端口，供外部的计算机访问
+# 该命令方式添加的端口，可在 /etc/firewalld/zones 中的对应配置文件中得到体现
 firewall-cmd --zone=public --add-port=3306/tcp --permanent
 
 # 查看端口状态
 firewall-cmd --zone=public --query-port=3306/tcp --permanent
 
-# 对外关闭3306端口
+# 对外关闭 3306 端口
 firewall-cmd --zone=public --remove-port=3306/tcp --permanent
 
 # 重启防火墙
 systemctl restart firewalld
 ```
 
-**说明**
+说明：
 
-- firewall-cmd：Linux中提供的操作firewall的工具。
+- firewall-cmd：Linux 中提供的操作 firewall 的工具。
 - –zone：指定作用域。
 - –add-port=80/tcp：添加的端口，格式为：端口/通讯协议。
 - –permanent：表示永久生效，没有此参数重启后会失效。
 
-**直接修改配置文件**
-
-### 2. 直接修改配置文件
+2.2、直接修改配置文件
 
 /etc/firewalld/zones/public.xml 文件的默认内容为：
 
@@ -308,38 +354,33 @@ systemctl restart firewalld
 </zone>
 ```
 
-## firewall常用命令
+3、firewall 常用命令
 
-### 1. 查看firewall的状态
+3.1、查看firewall的状态
 
 ```bash
 service firewalld status
-或
 systemctl status firewalld
-或
 firewall-cmd --state
 ```
 
-### 2. 启动、停止、重启
+3.2、启动、停止、重启
 
 ```bash
 # 启动
 service firewalld start
-或
 systemctl start firewalld
 
 # 停止
 service firewalld stop
-或
 systemctl stop firewalld
 
 # 重启
 service firewalld restart
-或
 systemctl restart firewalld
 ```
 
-### 3. 开机自启动的关闭与开启
+3.3、开机自启动的关闭与开启
 
 ```bash
 # 关闭开机自启动
@@ -349,86 +390,15 @@ systemctl disable firewalld
 systemctl enable firewalld
 ```
 
-### 4. 查看防火墙的规则
+3.4、查看防火墙的规则
 
 ```bash
 firewall-cmd --list-all 
 ```
 
-## 将CentOS7更改为iptables防火墙
-
-CentOS7切换到iptables防火墙，首先应该关闭默认的firewall防火墙并禁止自启动，然后再来安装和启动iptables防火墙。
-
-操作步骤如下：
-
-```bash
-# 停止firewall
-systemctl stop firewalld
-
-# 禁止firewall的开机自启动
-systemctl disable firewalld
-
-# 安装iptables
-yum install iptables-services
-
-# 开启iptables
-systemctl start iptables
-
-# 启用iptables的自启动
-systemctl enable iptables
-```
-
-之后，就可以在CentOS7中使用iptables配置防火墙。
-
-允许外部的计算机访问mysql，操作如下：
-
-```bash
-# 添加3306端口
-iptables -A INPUT -p tcp -dport 3306 -j ACCEPT
-
-# 保存当前的防火墙策略
-service iptables save
-
-# 重启iptables
-service iptables restart
-```
-
-### iptables常用命令：
-
-```bash
-# 启动iptables
-service iptables start
-
-# 停止iptables
-service iptables stop
-
-# 重启iptables
-service iptables restart
-
-# 查看iptables的状态
-service iptables status
-```
-
-iptables防火墙，非常重要的两个文件：
-
-- 配置文件 /etc/sysconfig/iptables-config
-- 策略文件 /etc/sysconfig/iptables（默认是不存在的，使用service ipatables save 可以保存当前策略）
-
-### iptables常用参数说明
-
-![1568967240839](Linux常用命令总结.assets/1568967240839.png)
-
-更多详情，参考以下链接：
-
-- [Centos7 防火墙 firewalld 实用操作](https://www.cnblogs.com/stulzq/p/9808504.html)
-- [firewalld防火墙详解](https://blog.51cto.com/andyxu/2137046)
-- [iptables详解](https://www.91yun.co/archives/1690)
-- [细说firewalld和iptables](cnblogs.com/grimm/p/10345693.html)
-- [firewalld和iptables详解](https://www.linuxprobe.com/chapter-08.html)
-
 # 端口占用查询
 
-## netstat命令
+## 1、netstat命令
 
 netstat 命令应用是比较频繁的，比如查看端口占用啦，查看端口进程啦，这些时候都是有必要的。
 
@@ -479,7 +449,7 @@ netstat -pnt |grep :80 |wc
 
 # 查看内存使用情况
 
-## top命令
+## 1、top命令
 
 内容说明如下：
 
@@ -496,7 +466,7 @@ netstat -pnt |grep :80 |wc
 - TIME+：该进程启动后占用的总的CPU时间，即占用CPU使用时间的累加值
 - COMMAND：启动该进程的命令名称
 
-## free命令
+## 2、free命令
 
 ```bash
 # 用KB为单位展示数据
@@ -520,14 +490,14 @@ free -h
 
 > 该部分内容摘抄自：[linux可用内存足够为什么还用swap]([http://www.ps-aux.com/linux%E5%8F%AF%E7%94%A8%E5%86%85%E5%AD%98%E8%B6%B3%E5%A4%9F%E4%B8%BA%E4%BB%80%E4%B9%88%E8%BF%98%E4%BD%BF%E7%94%A8%E4%BA%86swap.html](http://www.ps-aux.com/linux可用内存足够为什么还使用了swap.html))
 
-### 为什么 `buffer/cache` 会占用这么多的内存?
+### 1、为什么 `buffer/cache` 会占用这么多的内存?
 
 buffer/cache使用过高通常是程序频繁存取文件后,物理内存会很快被用光,
 当程序结束后,内存不会被正常释放,而是成为cache状态.
 通常我们不需要手工释放swap,Linux会自动管理.
 如果非要释放,请继续看.
 
-### 如何释放占用的`swap`呢?
+### 2、如何释放占用的`swap`呢?
 
 ```bash
 ## 将内存缓冲区数据立刻同步到磁盘
@@ -542,7 +512,7 @@ Mem:          31768       10853         217       16740       20698        3658
 Swap:          8191           0        8191
 ```
 
-### linux可用内存足够为什么还用swap?
+### 3、linux可用内存足够为什么还用swap?
 
 上面可以看到服务器共有32G内存,其中buff/cache占用了21G+.
 明明还有可以将近12G的内存可以使用.但系统却偏偏占用完了swap的8G内存.
@@ -567,7 +537,7 @@ Swap:          8191           0        8191
 就是说，你的内存在使用率到40%(100%-60%)的时候，系统就会开始出现有交换分区的使用。
 大家知道，内存的速度会比磁盘快很多，这样子会加大系统io，同时造的成大量页的换进换出，严重影响系统的性能，所以我们在操作系统层面，要尽可能使用内存，对该参数进行调整。
 
-### 调整Swap在什么时候使用
+### 4、调整Swap在什么时候使用
 
 **临时生效**
 
@@ -588,7 +558,7 @@ vm.swappiness = 10
 [root@localhost ~]# sysctl -p
 ```
 
-### shared内存
+### 5、shared内存
 
 通常我们还经常看到shared占用大量内存,shared表示共享内存的占用,
 起决定参数的两个分别是:
@@ -647,7 +617,7 @@ curl -fsSL url链接：获取url链接的内容。
 
 # Ubuntu 环境变量设置方法
 
-## 对所有用户生效，永久的
+## 1、对所有用户生效，永久的
 
 - 在/etc/profile文件中添加变量
 
@@ -675,7 +645,7 @@ curl -fsSL url链接：获取url链接的内容。
   PRESTO="/home/zhen/software/PRESTO/presto"
   ```
 
-## 对单一用户生效，永久的
+## 2、对单一用户生效，永久的
 
 - 修改/etc/bash.bashrc
 
@@ -687,7 +657,7 @@ curl -fsSL url链接：获取url链接的内容。
   # 与 /etc/profile 文件的添加方法相同
   ```
 
-## 只对当前shell有效，临时的
+## 3、只对当前shell有效，临时的
 
 - 直接运行export命令定义变量
 
@@ -716,7 +686,7 @@ source ~/.bashrc
 
 # 关于ubuntu的sources.list总结
 
-## 一、作用
+## 1、作用
 
    文件/etc/apt/sources.list是一个普通可编辑的文本文件，保存了ubuntu软件更新的源服务器的地址。和sources.list功能一样的是/etc/apt/sources.list.d/*.list(*代表一个文件名，只能由字母、数字、下划线、英文句号组成)。sources.list.d目录下的*.list文件为在单独文件中写入源的地址提供了一种方式，通常用来安装第三方的软件。
 
@@ -745,7 +715,7 @@ deb-src http://archive.ubuntu.com/ubuntu/ trusty-backports main restricted unive
 
  
 
-## 二、源的选择
+## 2、源的选择
 
    ubuntu官方有自身的软件源，直接从官方的软件源获取数据的速度比较慢。而通过国内的一些的源的镜像进行更新一般能够获得比官方源更快的速度，不过不同国内的源的下载速度也会不一样。[这里](http://wiki.ubuntu.org.cn/源列表)给出了较为详细的ubuntu软件源列表，个人现在觉得选取ubuntu软件源的方法是首先选择位于相同地区的源，然后进行ping操作，时延不是太高即可。对比aliyun、sohu、ubuntu官方ping的数据，可以发现aliyun的源在时延上表现最好。
 
