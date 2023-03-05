@@ -23,7 +23,149 @@
 - rpm -qa 【软件包名】：查找指定软件，可以配合`|`和`grep`命令做过滤。
 - rpm -ql 【软件包名】：查看软件安装的路径。
 
-# systemctl命令
+# 修改主机名
+
+```bash
+# 显示主机名以及其它信息
+hostnamectl
+# 查看主机名
+cat /etc/hostname
+# 设置主机名
+hostnamectl set-hostname 主机名
+```
+
+# 时间调整
+
+```bash
+# 显示目前的系统时区与时间等信息
+timedatectl
+# 设置系统时区为中国/上海
+timedatectl set-timezone Asia/Shanghai
+# 设置硬件时间为 UTC 时间，0：UTC；1：本地时间（CST）
+timedatectl set-local-rtc 0
+```
+
+> **Tips**
+>
+> 建议将硬件时间设置为 UTC。
+
+# 内核升级
+
+CentOS7 内核版本 3.10.* 在安装有些 Bug，建议升级到最新长期维护版比较好。
+
+查看当前 Linux 最新内核版本网址：https://www.kernel.org/
+
+RedHat 内核仓库网址：http://elrepo.org/
+
+安装步骤如下：
+
+1. 导入签名文件，签名文件目录为：/etc/pki/rpm-gpg/RPM-GPG-KEY-elrepo.org
+
+    ```bash
+    rpm --import https://www.elrepo.org/RPM-GPG-KEY-elrepo.org
+    ```
+
+2. 安装仓库包
+
+    ```bash
+    rpm -Uvh https://www.elrepo.org/elrepo-release-7.el7.elrepo.noarch.rpm
+    ```
+
+3. 搜索内核相关软件
+
+    ```bash
+    yum --enablerepo=elrepo-kernel list |grep kernel
+    ```
+
+    ![image-20230305215426082](Linux%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4%E6%80%BB%E7%BB%93.assets/image-20230305215426082.png)
+
+4. 安装内核
+
+    ```bash
+    yum --enablerepo=elrepo-kernel install -y kernel-lt.x86_64
+    ```
+
+5. 设置默认内核
+
+    查看内核列表
+
+    ```bash
+    awk -F \' '$1=="menuentry " {print i++ " : " $2}' /etc/grub2.cfg
+    ```
+
+    ![image-20230305213524514](Linux%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4%E6%80%BB%E7%BB%93.assets/image-20230305213524514.png)
+
+    查看当前默认启动内核
+
+    ```bash
+    grub2-editenv list
+    ```
+
+    ![image-20230305213636324](Linux%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4%E6%80%BB%E7%BB%93.assets/image-20230305213636324.png)
+
+    设置默认启动内核
+
+    ```bash
+    # 设置默认启动内核
+    grub2-set-default 'CentOS Linux (5.4.234-1.el7.elrepo.x86_64) 7 (Core)'
+    # 查看当前默认启动内核
+    grub2-editenv list
+    ```
+
+    ![image-20230305213924496](Linux%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4%E6%80%BB%E7%BB%93.assets/image-20230305213924496.png)
+
+6. 重启系统验证
+
+    ```bash
+    reboot
+    ```
+
+    ![image-20230305214158146](Linux%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4%E6%80%BB%E7%BB%93.assets/image-20230305214158146.png)
+
+    ```bash
+    uname -a
+    ```
+
+    ![image-20230305214332015](Linux%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4%E6%80%BB%E7%BB%93.assets/image-20230305214332015.png)
+
+7. 删除旧内核（可选）
+
+    查看当前系统已安装的内核列表
+
+    ```bash
+    yum list installed |grep kernel
+    ```
+
+    ![image-20230305214734371](Linux%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4%E6%80%BB%E7%BB%93.assets/image-20230305214734371.png)
+
+    卸载相关的软件包
+
+    ```bash
+    yum remove -y kernel.x86_64
+    yum remove -y kernel-tools.x86_64 kernel-tools-libs.x86_64
+    ```
+
+    重启系统
+
+    ```bash
+    reboot
+    ```
+
+# 系统服务
+
+## 1、systemd
+
+### 1.1、配置文件目录
+
+- /usr/lib/systemd/system/：每个服务最主要的启动脚本设定，有点类似以前的 /etc/init.d 底下的文件；
+- /run/systemd/system/：系统执行过程中所产生的服务脚本，这些脚本的优先序要比 /usr/lib/systemd/system/ 高！
+- /etc/systemd/system/：管理员依据主机系统的需求所建立的执行脚本，这个目录有点像以前 /etc/rc.d/rc5.d/Sxx 之类的功能！执行优先序又比 /run/systemd/system/ 高！
+
+> **Tips**
+>
+> 通常使用 systemctl 命令来启动某个服务时，如果不知道服务名的时候，可以到 /usr/lib/systemd/system/ 下看看服务名称。
+
+## 2、systemctl
 
 systemctl命令是系统服务管理器指令，它实际上将 service 和 chkconfig 这两个命令组合到一起。
 
@@ -96,7 +238,7 @@ systemctl命令是系统服务管理器指令，它实际上将 service 和 chkc
 
 [wget命令详解](https://www.cnblogs.com/peida/archive/2013/03/18/2965369.html)
 
-# CentOS关闭SELinux
+# SELinux
 
 查看SELinux状态
 
@@ -112,7 +254,7 @@ setenforce 0
 
 永久关闭
 
-修改/etc/selinux/config文件中的SELINUX="enforcing" 为 disabled ，然后重启。
+修改 /etc/selinux/config 文件中的 SELINUX="enforcing" 为 disabled ，然后重启。
 
 # 防火墙
 
@@ -486,45 +628,48 @@ free -h
 - buff/cache : 磁盘缓存大小
 - available : 可用内存大小 ， 从应用程序的角度来说：available = free + buff/cache .
 
-## linux可用内存足够为什么还用swap
+# swap 交换分区
+
+## 1、linux可用内存足够为什么还用swap
 
 > 该部分内容摘抄自：[linux可用内存足够为什么还用swap]([http://www.ps-aux.com/linux%E5%8F%AF%E7%94%A8%E5%86%85%E5%AD%98%E8%B6%B3%E5%A4%9F%E4%B8%BA%E4%BB%80%E4%B9%88%E8%BF%98%E4%BD%BF%E7%94%A8%E4%BA%86swap.html](http://www.ps-aux.com/linux可用内存足够为什么还使用了swap.html))
 
-### 1、为什么 `buffer/cache` 会占用这么多的内存?
+### 1.1、为什么 `buffer/cache` 会占用这么多的内存?
 
 buffer/cache使用过高通常是程序频繁存取文件后,物理内存会很快被用光,
-当程序结束后,内存不会被正常释放,而是成为cache状态.
-通常我们不需要手工释放swap,Linux会自动管理.
+当程序结束后,内存不会被正常释放,而是成为 cache 状态.
+通常我们不需要手工释放 swap,Linux 会自动管理.
 如果非要释放,请继续看.
 
-### 2、如何释放占用的`swap`呢?
+### 1.2、如何释放占用的 `swap` 呢?
 
 ```bash
-## 将内存缓冲区数据立刻同步到磁盘
+# 将内存缓冲区数据立刻同步到磁盘
 [root@localhost ~]# sync
-## 关闭所有的swap
+# 关闭所有的 swap
 [root@localhost ~]# swapoff -a
-## 启用所有swap
+# 启用所有 swap
 [root@localhost ~]# swapon -a
+# 查看 swap 内存使用情况
+## 方法1
 [root@localhost ~]# free -m
-              total        used        free      shared  buff/cache   available
-Mem:          31768       10853         217       16740       20698        3658
-Swap:          8191           0        8191
+## 方法2
+[root@localhost ~]# swapon -s
 ```
 
-### 3、linux可用内存足够为什么还用swap?
+### 1.3、linux 可用内存足够为什么还用 swap ?
 
-上面可以看到服务器共有32G内存,其中buff/cache占用了21G+.
-明明还有可以将近12G的内存可以使用.但系统却偏偏占用完了swap的8G内存.
-可知系统并没有自动释放buff/cache最大化利用内存.
+上面可以看到服务器共有 32G 内存,其中 buff/cache 占用了 21G+.
+明明还有可以将近 12G 的内存可以使用.但系统却偏偏占用完了 swap 的 8G 内存.
+可知系统并没有自动释放 buff/cache 最大化利用内存.
 
 原因:
 
-内核参数 swappiness 的值的大小,决定着linux何时开始使用swap。
+内核参数 swappiness 的值的大小,决定着 linux 何时开始使用 swap。
 
-- `swappiness=0` 时表示尽最大可能的使用物理内存以避免换入到swap.
-- `swappiness＝100` 时候表示最大限度使用swap分区，并且把内存上的数据及时的换出到swap空间里面.
-- 此值linux的基本默认设置为60，不同发行版可能略微不同.
+- `swappiness=0` 时表示尽最大可能的使用物理内存以避免换入到 swap.
+- `swappiness＝100` 时候表示最大限度使用 swap 分区，并且把内存上的数据及时的换出到 swap 空间里面.
+- 此值 linux 的基本默认设置为 60，不同发行版可能略微不同.
 
 查看命令具体如下：
 
@@ -534,10 +679,10 @@ Swap:          8191           0        8191
 ```
 
 什么意思呢?
-就是说，你的内存在使用率到40%(100%-60%)的时候，系统就会开始出现有交换分区的使用。
-大家知道，内存的速度会比磁盘快很多，这样子会加大系统io，同时造的成大量页的换进换出，严重影响系统的性能，所以我们在操作系统层面，要尽可能使用内存，对该参数进行调整。
+就是说，你的内存在使用率到 40%(100%-60%) 的时候，系统就会开始出现有交换分区的使用。
+大家知道，内存的速度会比磁盘快很多，这样子会加大系统 io，同时造的成大量页的换进换出，严重影响系统的性能，所以我们在操作系统层面，要尽可能使用内存，对该参数进行调整。
 
-### 4、调整Swap在什么时候使用
+#### 1.3.1、调整 Swap 在什么时候使用
 
 **临时生效**
 
@@ -550,7 +695,7 @@ vm.swappiness = 10
 
 **重启依旧生效**
 
-需要在/etc/sysctl.conf修改:
+需要在 /etc/sysctl.conf 修改:
 
 ```bash
 [root@localhost ~]# cat /etc/sysctl.conf
@@ -558,9 +703,9 @@ vm.swappiness = 10
 [root@localhost ~]# sysctl -p
 ```
 
-### 5、shared内存
+### 1.4、shared 内存
 
-通常我们还经常看到shared占用大量内存,shared表示共享内存的占用,
+通常我们还经常看到 shared 占用大量内存,shared 表示共享内存的占用,
 起决定参数的两个分别是:
 
 ```bash
@@ -592,14 +737,14 @@ kernel.shmall = 4194304  ##(16G)
 
 # curl命令详解
 
-curl -fsSL url链接：获取url链接的内容。
+curl -fsSL url 链接：获取 url 链接的内容。
 
 参数详解：
 
-- f：连接失败时不显示http错误。
+- f：连接失败时不显示 http 错误。
 - s：静默模式。不输出任何东西。
 - S：当有错误信息时，显示错误。
-- L：当请求放回301（重定向）状态码时，会访问新的网址。
+- L：当请求放回 301（重定向）状态码时，会访问新的网址。
 
 # 查看Linux内核与版本
 
@@ -611,7 +756,7 @@ curl -fsSL url链接：获取url链接的内容。
 
 - lsb_release -a
 
-- cat /etc/redhat-release，这种方法只适合Redhat系的Linux。
+- cat /etc/redhat-release，这种方法只适合 Redhat 系的 Linux。
 
 - cat /etc/issue，这种方法通用。
 
@@ -619,7 +764,7 @@ curl -fsSL url链接：获取url链接的内容。
 
 ## 1、对所有用户生效，永久的
 
-- 在/etc/profile文件中添加变量
+- 在 /etc/profile 文件中添加变量
 
   ```bash
   # 打开文件 (以设置java环境为例)
@@ -636,7 +781,7 @@ curl -fsSL url链接：获取url链接的内容。
   source /etc/profile
   ```
 
-- 在/etc/environment 中添加变量
+- 在 /etc/environment 中添加变量
 
   ```bash
   # enviroment文件比较不同, 原文件应为PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games" 的形式
@@ -647,11 +792,11 @@ curl -fsSL url链接：获取url链接的内容。
 
 ## 2、对单一用户生效，永久的
 
-- 修改/etc/bash.bashrc
+- 修改 /etc/bash.bashrc
 
-- 修改~/.bashrc
+- 修改 ~/.bashrc
 
-- 修改~/.profile （有时候是 ~/.bash_profile，或者 ~/.bash_login）
+- 修改 ~/.profile （有时候是 ~/.bash_profile，或者 ~/.bash_login）
 
   ```bash
   # 与 /etc/profile 文件的添加方法相同
@@ -659,7 +804,7 @@ curl -fsSL url链接：获取url链接的内容。
 
 ## 3、只对当前shell有效，临时的
 
-- 直接运行export命令定义变量
+- 直接运行 export 命令定义变量
 
   ```bash
   # 注意：＝ 即等号两边不能有任何空格
@@ -684,11 +829,11 @@ source ~/.bashrc
 
 > [Ubuntu 环境变量设置方法](http://zhaozhen.me/2017/09/15/ubuntu-evm.html)
 
-# 关于ubuntu的sources.list总结
+# 关于 ubuntu 的 sources.list 总结
 
 ## 1、作用
 
-   文件/etc/apt/sources.list是一个普通可编辑的文本文件，保存了ubuntu软件更新的源服务器的地址。和sources.list功能一样的是/etc/apt/sources.list.d/*.list(*代表一个文件名，只能由字母、数字、下划线、英文句号组成)。sources.list.d目录下的*.list文件为在单独文件中写入源的地址提供了一种方式，通常用来安装第三方的软件。
+   文件 /etc/apt/sources.list 是一个普通可编辑的文本文件，保存了ubuntu软件更新的源服务器的地址。和 sources.list 功能一样的是 /etc/apt/sources.list.d/*.list (代表一个文件名，只能由字母、数字、下划线、英文句号组成)。sources.list.d 目录下的 *.list 文件为在单独文件中写入源的地址提供了一种方式，通常用来安装第三方的软件。
 
 ```
 deb http://archive.ubuntu.com/ubuntu/ trusty main restricted universe multiverse
@@ -703,13 +848,13 @@ deb-src http://archive.ubuntu.com/ubuntu/ trusty-proposed main restricted univer
 deb-src http://archive.ubuntu.com/ubuntu/ trusty-backports main restricted universe multiverse
 ```
 
-   如上是ubuntu官方sources.list文件内容，具体地含义如下：
+   如上是 ubuntu 官方 sources.list 文件内容，具体地含义如下：
 
-   每一行的开头是deb或者deb-src，分别表示直接通过.deb文件进行安装和通过源文件的方式进行安装。
+   每一行的开头是 deb 或者 deb-src，分别表示直接通过.deb文件进行安装和通过源文件的方式进行安装。
 
-   deb或者deb-src字段之后，是一段URL，之后是五个用空格隔开的字符串，分别对应相应的目录结构。在浏览器中输入http://archive.ubuntu.com/ubuntu/，并进入dists目录，可以发现有5个目录和前述sources.list文件中的第三列字段相对应。任选其中一个目录进入，可以看到和sources.list后四列相对应的目录结构。
+   deb 或者 deb-src 字段之后，是一段URL，之后是五个用空格隔开的字符串，分别对应相应的目录结构。在浏览器中输入 http://archive.ubuntu.com/ubuntu/，并进入 dists 目录，可以发现有 5 个目录和前述 sources.list 文件中的第三列字段相对应。任选其中一个目录进入，可以看到和 sources.list 后四列相对应的目录结构。
 
-更多内容可以使用man source.list获得。
+更多内容可以使用 man source.list 获得。
 
 ![img](Linux%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4%E6%80%BB%E7%BB%93.assets/051605496117149.png)![img](Linux%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4%E6%80%BB%E7%BB%93.assets/051606162679773.png)
 
@@ -745,6 +890,8 @@ autoindent：表示开启自动缩进。
 # Linux 常用软件
 
 1、net-tools：含有 ifconfig 命令。
+
+2、yum-utils：
 
 # CentOS 7 网络配置
 
