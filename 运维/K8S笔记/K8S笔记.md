@@ -165,6 +165,96 @@ RedHat 内核仓库网址：http://elrepo.org/
     reboot
     ```
 
+### 1.8、日志记录服务修改
+
+1. rsyslog 和 systemd-journald 服务区别
+
+    rsyslogd 必须要开机完成并且执行了 rsyslogd 这个 daemon 之后，登录文件才会开始记录。所以，核心还得要自己产生一个 klogd 的服务， 才能将系统在开机过程、启动服务的过程中的信息记录下来。
+
+    在有了 systemd 之后，由于这玩意儿是核心唤醒的，然后又是第一支执行的软件，它可以主动呼叫 systemd-journald 来协助记载登录文件，因此在开机过程中的所有信息，包括启动服务与服务若启动失败的情况等等，都可以直接被记录到 systemd-journald 里头去。
+
+2. systemd-journald 配置日志持久化
+
+    systemd-journald 默认是把日志保存到内存中（在 /run/log/journal/ 目录下），因此系统重新启动过后，对应的日志数据就会被清空。
+
+    但是可通过新建目录，让日志自动记录到新建目录中，并永久存储。步骤如下：
+
+    1. 修改 /etc/systemd/journald.conf 配置文件，内如如下：
+
+        ```tex
+        Storage=persistent # 将日志数据保存到磁盘上
+        Compress=yes # 压缩历史日志
+        SyncIntervalSec=5m # 向磁盘刷写日志文件的时间间隔，单位为分
+        RateLimitInterval=30s # 限制日志的生成速率，单位是秒
+        RateLimitBurst=1000 # 表示消息条数，与 RateLimitInterval 配合使用
+        SystemMaxUse=10G # 最大占用磁盘空间
+        SystemMaxFileSize=200M # 单日志文件最大 200M
+        MaxRetentionSec=2week # 日志保存时间 2 周
+        ForwardToSyslog=no # 不将日志转发到 rsyslog 中
+        ```
+
+    2. 创建目录
+
+        ```bash
+        cd /var/log
+        mkdir journal
+        chown root:systemd-journal /var/log/journal
+        chmod 2775 /var/log/journal
+        ```
+
+    3. 重启服务，命令如下：`systemctl restart systemd-journald`。
+
+    4. 检验配置是否生效
+
+        进入 /var/log/journal 目录下，查看是否有文件生成，如果有，则表示配置生效。
+
+    5. 停用 rsyslog （可选）
+
+        ```bash
+        systemctl stop rsyslog
+        systemctl disable rsyslog
+        ```
+
+3. rsyslog 和 systemd-journald 关系
+
+    两者没有什么直接关系，rsyslog 保存的是文本文件，systemd-journald 保存的是二进制文件。
+
+    两者功能存在重复，因此可以停掉一个服务，看自己愿意使用那种日志记录方式。
+
+### 1.9、调整内核参数
+
+新建 /etc/sysctl.d/kubernetes.conf 文件，内容如下：
+
+```tex
+net.ipv6.conf.all.disable_ipv6=1
+net.bridge.bridge-nf-call-ip6tables=1
+net.bridge.bridge-nf-call-iptables=1
+net.ipv4.ip_forward=1
+vm.swappiness=0
+vm.overcommit_memory=1
+vm.panic_on_oom=0
+fs.inotify.max_user_instances=8192
+fs.inotify.max_user_watches=1048576
+fs.file-max=52706963
+fs.nr_open=52706963
+net.netfilter.nf_conntrack_max=2310720
+```
+
+让内核参数配置生效，使用如下命令：`sysctl -p /etc/sysctl.d/kubernetes.conf`。
+
+### 1.10、加载相关核心模块
+
+加载相关核心模块，命令如下：
+
+```bash
+modprobe br_netfilter
+modprobe ip_vs
+modprobe ip_vs_rr
+modprobe ip_vs_wrr
+modprobe ip_vs_sh
+modprobe nf_conntrack
+```
+
 ## 2、安装 K8S 集群
 
 ### 2.1、安装 Docker

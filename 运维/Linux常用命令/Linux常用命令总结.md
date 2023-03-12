@@ -216,6 +216,106 @@ systemctl命令是系统服务管理器指令，它实际上将 service 和 chkc
         <td>systemctl list-unit-files</td>
     </tr>
 </table>
+# 内核参数
+
+查看系统核心参数的命令如下：`sysctl -a`。
+
+配置系统核心参数的目录为：/etc/sysctl.d。
+
+使配置核心参数生效的命令如下：sysctl -p [配置文件全路径]
+
+# 核心模块
+
+## 1、查看模块
+
+内核模块保存位置：/lib/modules/*。
+
+扫描系统中已有的模块，命令如下：
+
+```bash
+depmod
+```
+
+参数说明如下：
+
+- 不加选项：depmod 命令会扫描系统中的内核模块，并写入 modules.dep 文件；
+- -a：扫描所有模块；
+- -A：扫描新模块，只有有新模块时，才会更新modules.dep文件；
+- -n：把扫描结果不写入modules.dep文件，而是输出到屏幕上；
+
+查看系统中到底安装了哪些内核模块，命令如下：`lsmod`。
+
+## 2、加载/卸载模块
+
+加载/卸载模块，语法如下：
+
+modprobe [选项] 模块名。
+
+选项说明如下：
+
+- -f：强制加载模块；
+
+- -r：删除模块。
+
+
+
+# CentOS7 日志服务
+
+## 1、简单介绍
+
+CentOS7 中，记录日志的服务有 rsyslog 和 systemd-journald 服务。
+
+rsyslogd 必须要开机完成并且执行了 rsyslogd 这个 daemon 之后，登录文件才会开始记录。所以，核心还得要自己产生一个 klogd 的服务， 才能将系统在开机过程、启动服务的过程中的信息记录下来。
+
+在有了 systemd 之后，由于这玩意儿是核心唤醒的，然后又是第一支执行的软件，它可以主动呼叫 systemd-journald 来协助记载登录文件，因此在开机过程中的所有信息，包括启动服务与服务若启动失败的情况等等，都可以直接被记录到 systemd-journald 里头去。
+
+## 2、systemd-journald 配置日志持久化
+
+systemd-journald 默认是把日志保存到内存中（在 /run/log/journal/ 目录下），因此系统重新启动过后，对应的日志数据就会被清空。
+
+但是可通过新建目录，让日志自动记录到新建目录中，并永久存储。步骤如下：
+
+1. 修改 /etc/systemd/journald.conf 配置文件，内如如下：
+
+    ```tex
+    Storage=persistent # 将日志数据保存到磁盘上
+    Compress=yes # 压缩历史日志
+    SyncIntervalSec=5m # 向磁盘刷写日志文件的时间间隔，单位为分
+    RateLimitInterval=30s # 限制日志的生成速率，单位是秒
+    RateLimitBurst=1000 # 表示消息条数，与 RateLimitInterval 配合使用
+    SystemMaxUse=10G # 最大占用磁盘空间
+    SystemMaxFileSize=200M # 单日志文件最大 200M
+    MaxRetentionSec=2week # 日志保存时间 2 周
+    ForwardToSyslog=no # 不将日志转发到 rsyslog 中
+    ```
+
+2. 创建目录
+
+    ```bash
+    cd /var/log
+    mkdir journal
+    chown root:systemd-journal /var/log/journal
+    chmod 2775 /var/log/journal
+    ```
+
+3. 重启服务，命令如下：`systemctl restart systemd-journald`。
+
+4. 检验配置是否生效
+
+    进入 /var/log/journal 目录下，查看是否有文件生成，如果有，则表示配置生效。
+
+5. 停用 rsyslog （可选）
+
+    ```bash
+    systemctl stop rsyslog
+    systemctl disable rsyslog
+    ```
+
+## 3、rsyslog 和 systemd-journald 关系
+
+两者没有什么直接关系，rsyslog 保存的是文本文件，systemd-journald 保存的是二进制文件。
+
+两者功能存在重复，因此可以停掉一个服务，看自己愿意使用那种日志记录方式。
 
 # curl命令
 
@@ -893,7 +993,7 @@ autoindent：表示开启自动缩进。
 
 2、yum-utils：
 
-# CentOS 7 网络配置
+# CentOS7 网络配置
 
 1、查看网卡列表
 
