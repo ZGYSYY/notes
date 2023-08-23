@@ -259,28 +259,33 @@ modprobe nf_conntrack
 
 ### 2.1、安装 Docker
 
-1. 配置 Docker Yum 源，使用 Docker 官方的 Yum 源下载十分的慢，这里我使用国内阿里云的 Yum 源，地址是：http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo，将该文件下载下来后，将内容复制到服务器的 /etc/yum.repos.d 目录下，然后使用如下命令安装 Docker：
+1. 安装 Docker 存储驱动程序，官网推荐使用 devicemapper 驱动，需要安装 device-mapper-persistent-data 和 lvm2 这两个软件，命令如下：
+
+    ```bash
+    yum install -y device-mapper-persistent-data lvm2
+    ```
+
+2. 配置 Docker Yum 源，使用 Docker 官方的 Yum 源下载十分的慢，这里我使用国内阿里云的 Yum 源，地址是：http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo，将该文件下载下来后，将内容复制到服务器的 /etc/yum.repos.d 目录下，然后使用如下命令安装 Docker：
 
     ```bash
     yum install -y docker-ce
     ```
 
-2. 启动 Docker，并设置开机自启，命令如下：
+3. 启动 Docker，并设置开机自启，命令如下：
 
     ```bash
     systemctl start docker.service
     systemctl enable docker.service
     ```
 
-    
-
-3. 配置 Docker 的镜像仓库地址，因为默认的镜像仓库地址很慢，这里我使用的是国内网易云的镜像仓库地址，在服务器 /etc/docker 目录下新建 daemon.json 文件，内容如下：
+4. 配置 Docker 的镜像仓库地址和其他配置（存储驱动程序、日志存储格式），因为默认的镜像仓库地址很慢，这里我使用的是国内网易云的镜像仓库地址，在服务器 /etc/docker 目录下新建 daemon.json 文件，内容如下：
 
     ```json
     {
       "registry-mirrors": [
         "https://hub-mirror.c.163.com"
       ],
+      "storage-driver": "devicemapper",
       "exec-opts": ["native.cgroupdriver=systemd"],
       "log-driver": "json-file",
       "log-opts": {
@@ -289,11 +294,13 @@ modprobe nf_conntrack
     }
     ```
 
-    创建 /etc/systemd/docker.service.d 目录，命令如下：
+    配置说明如下：
 
-    ```bash
-    mkdir -p /etc/systemd/docker.service.d
-    ```
+    - registry-mirrors：镜像加速地址。
+    - storage-driver：设置存储驱动程序为 devicemapper。
+    - exec-opts：运行时执行选项，Docker 默认是 cgroupfs，由于 Kubernetes 默认使用的是 systemd，所以使其保持一致，来避免资源在有压力的情况时,出现不稳定的情况。
+    - log-driver：设置容器的默认日志驱动程序。
+    - log-opts：设置容器的日志驱动程序其他选项。
 
     让配置文件生效，使用如下命令：
 
@@ -308,5 +315,103 @@ modprobe nf_conntrack
     docker info
     ```
 
-    注意看 `Registry Mirrors`、 `Logging Driver`、`Cgroup Driver` 的值是否为所设置的镜像仓库地址，如果是，则设置成功。
+    注意看 `Registry Mirrors`、`Storage Driver`、`Logging Driver`、`Cgroup Driver` 的值是否与 /etc/docker/daemon.json 所设置的值一致，如果一致，则设置成功。
 
+5. 设置 Docker 开机自启，命令如下：
+
+    ```bash
+    systemctl enable docker
+    ```
+
+### 2.2、安装 Kubeadm
+
+1. 由于 K8S 官网提供的 yum 源在国内几乎无法访问，因此需要配置国内的 yum 源。在 /etc/yum.repos.d 目录下，创建 kubernetes.repo 文件，内容如下：
+
+    ```tex
+    [kubernetes]
+    name=Kubernetes
+    baseurl=http://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64
+    enabled=1
+    gpgcheck=1
+    repo_gpgcheck=1
+    gpgkey=http://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg http://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
+    ```
+
+2. 安装相关软件，命令如下：
+
+    ```bash
+    yum install -y kubeadm-1.15.1 kubectl-1.15.1 kubelet-1.15.1
+    ```
+
+3. 设置 kubelet 服务开机自启，命令如下：
+
+    ```bash
+    systemctl enable kubelet
+    ```
+
+### 2.3、初始化主节点
+
+1. 获取 Kubeadm 初始化默认模板，将模板内容保存到 /usr/local/share/kubernates/kubeadm/kubeadm-config.yaml 文件中，命令如下：
+
+    ```bash
+    mkdir -p /usr/local/share/kubernates/kubeadm
+    kubeadm config print init-defaults > kubeadm-config.yaml
+    ```
+
+2. 根据实际情况，修改 kubeadm-config.yaml 内容，修改内容如下：
+
+    ```yaml
+    apiVersion: kubeadm.k8s.io/v1beta2
+    bootstrapTokens:
+    - groups:
+      - system:bootstrappers:kubeadm:default-node-token
+      token: abcdef.0123456789abcdef
+      ttl: 24h0m0s
+      usages:
+      - signing
+      - authentication
+    kind: InitConfiguration
+    localAPIEndpoint:
+      advertiseAddress: 192.168.2.5 # 本节点 ip 地址
+      bindPort: 6443
+    nodeRegistration:
+      criSocket: /var/run/dockershim.sock
+      name: k8s-master
+      taints:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
+    ---
+    apiServer:
+      timeoutForControlPlane: 4m0s
+    apiVersion: kubeadm.k8s.io/v1beta2
+    certificatesDir: /etc/kubernetes/pki
+    clusterName: kubernetes
+    controllerManager: {}
+    dns:
+      type: CoreDNS
+    etcd:
+      local:
+        dataDir: /var/lib/etcd
+    imageRepository: k8s.gcr.io
+    kind: ClusterConfiguration
+    kubernetesVersion: v1.15.1 # 指定 kubernetes 的版本
+    networking:
+      dnsDomain: cluster.local
+      podSubnet: 10.244.0.0/16 # 指定 pod 的网段，为后续做全覆盖网络做准备
+      serviceSubnet: 10.96.0.0/12
+    scheduler: {}
+    ---
+    # 将默认的调度方式改为 IPVS 调度方式
+    apiVersion: kubeproxy.config.k8s.io/v1alpha1
+    kind: KubeProxyConfiguration
+    featureGates:
+      SupportIPVSProxyMode: true
+    mode: ipvs
+    ```
+
+3. 初始化节点，命令如下：
+
+    ```bash
+    cd /usr/local/share/kubernates/kubeadm
+    kubeadm init --config=kubeadm-config.yaml --experimental-upload-certs | tee kubeadm-init.log
+    ```

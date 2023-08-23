@@ -32,6 +32,8 @@ hostnamectl
 cat /etc/hostname
 # 设置主机名
 hostnamectl set-hostname 主机名
+# 设置主机（存在大写）
+hostnamectl set-hostname --static 主机名
 ```
 
 # 时间调整
@@ -508,6 +510,31 @@ iptables -A INPUT -m state --state INVALID -j DROP
 ```bash
 service iptables save
 ```
+
+### 1.3、四表五链
+
+1. 四表
+
+    - Filter 表：iptables 默认表，负责包过滤，防火墙功能；
+    - NAT 表：负责网络地址转换功能，对应内核模块；
+    - Mangle 表：主要负责修改数据包，对应内核模块；
+    - Raw 表：优先级最高，关闭 NAT 表启用的连接追踪机制；
+
+2. 五链
+
+    - PREROUTING 链：路由选择前；
+    - INPUT 链：路由目的地为本机；
+    - FORWARD 链：路由目的地非本机，转发；
+    - OUTPUT 链：本机发出数据包；
+    - POSTROUTING 链：路由选择后；
+
+3. 表优先级
+
+    优先级高到低：raw–>mangle–>nat–>filter。
+
+![image-20230315222105875](Linux%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4%E6%80%BB%E7%BB%93.assets/image-20230315222105875.png)
+
+![image-20230315221732874](Linux%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4%E6%80%BB%E7%BB%93.assets/image-20230315221732874.png)
 
 ## 2、firewall
 
