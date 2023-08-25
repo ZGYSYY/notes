@@ -478,9 +478,457 @@
 
 ## 3、变量结构赋值
 
+### 3.1、数组解构
+
+示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        // ==================== 数组解构 ==================== START
+        let arr = [1, 2, 3];
+        let [a, b, c] = arr;
+        console.log(a, b, c);
+        // ==================== 数组解构 ==================== END
+
+        // ==================== 数组解构-元素交换 ==================== START
+        let x = 1;
+        let y = 2;
+        [y, x] = [x, y];
+        console.log(x, y);
+        // ==================== 数组解构-元素交换 ==================== END
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230825222711306](ES6-ES13.assets/image-20230825222711306.png)
+
+嵌套数组解构，示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        // ==================== 数组解构-嵌套数组 ==================== START
+        let arr = [1, [2, 3, 4], 5, 6];
+        let [a, [b, , c], d] = arr;
+        console.log(a, b, c, d);
+        // ==================== 数组解构-嵌套数组 ==================== END
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230825223156140](ES6-ES13.assets/image-20230825223156140.png)
+
+数组解构设置默认值，示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        // ==================== 数组解构-设置默认值 ==================== START
+        let [x, y = 200] = [100, ];
+        console.log(x, y);
+        // ==================== 数组解构-设置默认值 ==================== END
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230825223515707](ES6-ES13.assets/image-20230825223515707.png)
+
+### 3.2、对象解构
+
+对象解构赋值，示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        // ==================== 对象解构赋值-简单对象 ==================== START
+        let obj = {
+            name: "ZGY",
+            age: 26
+        }
+
+        let {name, age} = obj
+        console.log(name, age);
+        // ==================== 对象解构赋值-简单对象 ==================== END
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230825224017215](ES6-ES13.assets/image-20230825224017215.png)
+
+对象解构赋值时，自定义变量名，示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        // ==================== 对象解构赋值-简单对象-自定义变量名 ==================== START
+        let data = "OJBK!";
+        let obj = {
+            code: 200,
+            data: "sucess"
+        }
+        let {code, data:da} = obj;
+        console.log(code, da);
+        // ==================== 对象解构赋值-简单对象-自定义变量名 ==================== END
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230825224625206](ES6-ES13.assets/image-20230825224625206.png)
+
+对象解构时，设置默认值，示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        // ==================== 对象解构赋值-设置默认值 ==================== START
+        let obj = {
+            name: "ZGY",
+            age: 26
+        }
+        let {name, age, sex = "男"} = obj;
+        console.log(name, age, sex);
+        // ==================== 对象解构赋值-设置默认值 ==================== END
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230825224956946](ES6-ES13.assets/image-20230825224956946.png)
+
+复杂对象进行解构赋值，示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        // ==================== 复杂对象解构赋值 ==================== START
+        let obj = {
+            name: "ZGY",
+            age: 26,
+            other: {
+                list: ["aaa", "bbb", "ccc"]
+            }
+        }
+        let {name, age, other: {list}} = obj;
+        console.log(name, age, list);
+        // ==================== 复杂对象解构赋值 ==================== END
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230825225608763](ES6-ES13.assets/image-20230825225608763.png)
+
+函数参数解构，示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        // ==================== 函数参数解构赋值 ==================== START
+        let obj = {
+            name: "ZGY",
+            age: 26,
+            other: {
+                list: ["aaa", "bbb", "ccc"]
+            }
+        }
+
+        function handleData({name, age, other:{list}}) {
+            console.log(name, age, list);
+        }
+
+        handleData(obj);
+        // ==================== 函数参数解构赋值 ==================== END
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230825230025703](ES6-ES13.assets/image-20230825230025703.png)
+
+字符串解构赋值，示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        // ==================== 字符串解构赋值 ==================== START
+        let str = "hello world!";
+        let [x, y, z] = str;
+        let {legnth} = str;
+        console.log(x, y, z, length);
+        // ==================== 字符串解构赋值 ==================== END
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230825230507529](ES6-ES13.assets/image-20230825230507529.png)
+
 ## 4、模板字符串
 
+简单的示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        .active {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <ul>
+
+    </ul>
+
+    <script>
+        // ==================== 模板字符串 ==================== START
+        function sayHello() {
+            return "hello!";
+        }
+    
+        let arr = ["ZGY", "YY", "LHM"];
+        let list = arr.map(function(item, index) {
+            return `<li class = "${index === 0 ? 'active': ''}">
+                <b>${item}</b>
+                ${sayHello()}
+            </li>`;
+        });
+        console.log(list);
+    
+        let ul = document.querySelector("ul");
+        ul.innerHTML = list.join("");
+        // ==================== 模板字符串 ==================== END
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230825232219389](ES6-ES13.assets/image-20230825232219389.png)
+
 ## 5、字符串与数值扩展
+
+### 5.1、字符串扩展
+
+示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        let myname = "ZhangGuoYuan";
+        
+        // ==================== 判断字符串中是否存在 Guo ==================== START
+        console.log(myname.includes("Guo"));
+        // ==================== 判断字符串中是否存在 Guo ==================== END
+
+        // ==================== 判断字符串中是否是以 Zhang 开头 ==================== START
+        console.log(myname.startsWith("Zhang"));
+        // ==================== 判断字符串中是否是以 Zhang 开头 ==================== END
+
+        // ==================== 判断字符串中是否是以 Yuan 结尾 ==================== START
+        console.log(myname.endsWith("Yuan"));
+        // ==================== 判断字符串中是否是以 Yuan 结尾 ==================== END
+
+        // ==================== 判断字符串中从第 5 个元素开始，往后是否存在 Guo ==================== START
+        console.log(myname.includes("Guo", 5));
+        // ==================== 判断字符串中从第 5 个元素开始，往后是否存在 Guo ==================== END
+
+        // ==================== 判断字符串中从第 5 个元素开始，往后是否是以 Guo 开头 ==================== START
+        console.log(myname.startsWith("Guo", 5));
+        // ==================== 判断字符串中从第 5 个元素开始，往后是否是以 Guo 开头 ==================== END
+
+        // ==================== 判断字符串中从第 8 个元素开始，往前是否是以 Guo 结尾 ==================== START
+        console.log(myname.endsWith("Guo", 8));
+        // ==================== 判断字符串中从第 8 个元素开始，往前是否是以 Guo 结尾 ==================== END
+
+        // ==================== repeat 使用 ==================== START
+        console.log(myname.repeat(0));
+        console.log(myname.repeat(1));
+        console.log(myname.repeat(2));
+        console.log(myname.repeat("3"));
+        // ==================== repeat 使用 ==================== END
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230825234805864](ES6-ES13.assets/image-20230825234805864.png)
+
+### 5.2、数值扩展
+
+示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        // ==================== 支持各种进制写法 ==================== START
+        // 二进制
+        console.log(0b110);
+        // 八进制
+        console.log(0o117);
+        // 十六进制
+        console.log(0xABC);
+        // ==================== 支持各种进制写法 ==================== END
+
+        // ==================== Number.isFinite 数字是否有效判断 ==================== START
+        console.log(Number.isFinite(100)); // true
+        console.log(Number.isFinite(100/0)); // false
+        console.log(Number.isFinite(Infinity)); // false
+        console.log(Number.isFinite("100")); // false
+        // ==================== Number.isFinite 数字是否有效判断 ==================== END
+
+        // ==================== Number.isNaN 是否不是一个 Number 判断 ==================== START
+        console.log(Number.isNaN(100)); // false
+        console.log(Number.isNaN(NaN)); // true
+        console.log(Number.isNaN("ABC")); // false
+        console.log(Number.isNaN("100")); // false
+        // ==================== Number.isNaN 是否不是一个 Number 判断 ==================== END
+
+        // ==================== Number.isInteger 是否是整数判断 ==================== START
+        console.log(Number.isInteger(100)); // true
+        console.log(Number.isInteger(100.0)); // true
+        console.log(Number.isInteger("ABC")); // false
+        console.log(Number.isInteger("100")); // false
+        // ==================== Number.isInteger 是否是整数判断 ==================== END
+
+        // ==================== Number.EPSILON 极小常量应用 ==================== START
+        function isEqual(x, y) {
+            return Math.abs(x - y) < Number.EPSILON;
+        }
+        console.log(isEqual(0.1 + 0.2, 0.3));
+        // ==================== Number.EPSILON 极小常量应用 ==================== END
+
+        // ==================== Number.trunc 将小数抹掉 ==================== START
+        console.log(Math.trunc(1.2)); // 1
+        console.log(Math.trunc(1.8)); // 1
+        console.log(Math.trunc(-1.8)); // -1
+        console.log(Math.trunc(-1.2)); // -1
+        // ==================== Number.trunc 将小数抹掉 ==================== END
+
+        // ==================== Number.sign 判断一个数是正数、负数、零 ==================== START
+        console.log(Math.sign(-100)); // -1
+        console.log(Math.sign(100)); // 1
+        console.log(Math.sign(0)); // 0
+        console.log(Math.sign(-0)); // -0
+        console.log(Math.sign("ZGY")); // NaN
+        // ==================== Number.sign 判断一个数是正数、负数、零 ==================== END
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230826001033232](ES6-ES13.assets/image-20230826001033232.png)
 
 ## 6、数组扩展
 
