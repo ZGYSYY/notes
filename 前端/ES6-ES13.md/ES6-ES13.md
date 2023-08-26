@@ -932,7 +932,417 @@
 
 ## 6、数组扩展
 
+### 6.1、展开运算符
+
+数组复制，并且不影响原数组，示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        // ==================== 数组复制，复制后不影响原数组 ==================== START
+        let arr = [1, 2, 3]
+        let arr1 = arr.concat();
+        console.log(arr1);
+        arr1.push(4);
+        console.log(arr, arr1);
+        // ==================== 数组复制，复制后不影响原数组 ==================== END
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230826105050526](ES6-ES13.assets/image-20230826105050526.png)
+
+<b style="color:red;">Tips</b>：这种复制被称为浅复制，当数组中存的是对象时，实际复制的是对象的引用。
+
+数组复制，并且不影响原数组的另一种写法，示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        // ==================== 数组复制，复制后不影响原数组另一种写法 ==================== START
+        let arr = [1, 2, 3];
+        let arr1 = [...arr];
+        let arr2 = [4, 5, 6];
+        let arr3 = [...arr, ...arr2];
+        console.log(arr1, arr2, arr3);
+        // ==================== 数组复制，复制后不影响原数组另一种写法 ==================== END
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230826105617472](ES6-ES13.assets/image-20230826105617472.png)
+
+结合数组解构赋值的应用，示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        // ==================== 结合数组解构赋值的应用 ==================== START
+        let arr = [1, 2, 3, 4, 5, 6];
+        let [a, b, ...c] = arr;
+        console.log(a, b, c);
+        // ==================== 结合数组解构赋值的应用 ==================== END
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230826110008602](ES6-ES13.assets/image-20230826110008602.png)
+
+### 6.2、Array.from 函数
+
+Array.from 函数可以将类似数组的元素（比如：arguments）转换为真正的数据，示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <ul>
+        <li>AAA</li>
+        <li>BBB</li>
+        <li>CCC</li>
+    </ul>
+    <script>
+        // ==================== Array.from 的示例 1 ==================== START
+        function test() {
+            console.log(arguments);
+            console.log(Array.from(arguments));
+        }
+
+        test(1, 2, 3, 4);
+        // ==================== Array.from 的示例 1 ==================== END
+
+        // ==================== Array.from 的示例 2 ==================== START
+        let ulArr = document.querySelectorAll("ul li");
+        let ulArr1 = Array.from(ulArr);
+        console.log(ulArr);
+        console.log(ulArr1);
+        // ==================== Array.from 的示例 2 ==================== END
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230826111216238](ES6-ES13.assets/image-20230826111216238.png)
+
+### 6.3、Array.of 函数
+
+Array.of 函数的作用是初始化一个数组，示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        let arr = [1, 2, 3, 4];
+        let arr1 = Array(4);
+        let arr2 = Array.of(1, 2, 3, 4);
+        console.log("arr", arr);
+        console.log("arr1", arr1);
+        console.log("arr2", arr2);
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230826112137529](ES6-ES13.assets/image-20230826112137529.png)
+
+### 6.4、findXXX 函数
+
+示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        let arr = [1, 2, 3, 4];
+        let res = arr.find(function(item) {
+            return item > 2;
+        });
+        console.log("res", res);
+
+        let res1 = arr.findIndex(function(item) {
+            return item > 3;
+        });
+        console.log("res1", res1);
+
+        // ES13 发布的方法
+        let res2 = arr.findLast(function(item) {
+            return item > 2;
+        });
+        console.log("res2", res2);
+
+        // ES13 发布的方法
+        let res3 = arr.findLastIndex(function(item) {
+            return item > 3;
+        });
+        console.log("res3", res3);
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230826113259639](ES6-ES13.assets/image-20230826113259639.png)
+
+### 6.5、Array.fill 函数
+
+Array.fill 函数的作用就是给数组填充数据，示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        let arr = Array(5).fill("ZGY");
+        console.log(arr);
+
+        let arr1 = ["ZGY", "YY", "LHM"];
+        arr1.fill("AAA", 0, 1);
+        console.log(arr1);
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230826114837142](ES6-ES13.assets/image-20230826114837142.png)
+
+### 6.6、flat、flatMap 函数
+
+示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        let arr = [1, 2, 3, [4, 5, 6]];
+        let arr1 = arr.flat();
+        console.log(arr1);
+
+        let arr2 = [{name:"ZGY", list:[1, 2, 3]}, {name:"LHM", list:[4, 5, 6]}];
+        let arr3 = arr2.flatMap(function(item) {
+            return item.list;
+        });
+        console.log(arr3);
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230826115438313](ES6-ES13.assets/image-20230826115438313.png)
+
 ## 7、对象扩展
+
+### 7.1、对象简写
+
+在给对象赋值时，如果属性名称和值的变量相同，就可以进行对象简写，示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        let name = "ZGY";
+        let age = 26;
+        let obj = {
+            name, // name: name
+            age // age: age
+        }
+        console.log(obj);
+    </script>
+</body>
+</html>
+```
+
+### 7.2、对象属性表达式
+
+当一个属性的名称是变量时，可以使用对象属性表达式，示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        let name = "ZGY";
+        let obj = {
+            [name]: "AAA"
+        }
+        console.log(obj);
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230826171807972](ES6-ES13.assets/image-20230826171807972.png)
+
+### 7.3、扩展运算符
+
+该特性是在 ES9 提出的，可以实现将一个对象的属性复制到另外一个对象中，示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        // ==================== 使用扩展运算符进行对象复制 ==================== START
+        let obj = {
+            name: "ZGY"
+        }
+        let obj1 = {
+            ...obj
+        }
+        let obj2 = {
+            age: 26
+        }
+        let obj3 = {...obj, ...obj2}
+        console.log(obj1);
+        obj2.name = "LHM";
+        console.log(obj, obj2);
+        console.log(obj3);
+
+        let obj4 = {
+            name: "YY",
+            ...obj // 相同属性，后一个会覆盖前面的
+        }
+        console.log(obj4);
+        // ==================== 使用扩展运算符进行对象复制 ==================== END
+
+        // ==================== ES6 对象复制 ==================== START
+        let obj5 = {
+            name: "ZGY"
+        }
+        let obj6 = {
+            age: 26
+        }
+        let obj7 = {
+            name: "YY"
+        }
+        Object.assign(obj5, obj6, obj7); // 将属性复制到第一参数中
+        console.log("obj5", obj5);
+        let obj8 = {}
+        Object.assign(obj8, obj5, obj6, obj7);
+        console.log("obj8", obj8);
+        // ==================== ES6 对象复制 ==================== END
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230826174723488](ES6-ES13.assets/image-20230826174723488.png)
+
+<b style="color:red;">Tips</b>：`Object.assign` 是把属性复制到第一个参数中。
+
+### 7.4、Object.is 函数
+
+Object.is 函数的作用是判断对象是否相等，示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        console.log(Object.is(6, 6)); // true
+        console.log(Object.is(6, "6")); // false
+        console.log(Object.is({}, {})); // false
+        console.log(Object.is(parseInt("ZGY"), NaN)); // true
+        console.log(Object.is(-0, 0)); // false
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230826175457922](ES6-ES13.assets/image-20230826175457922.png)
 
 ## 8、函数扩展
 
