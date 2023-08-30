@@ -1346,9 +1346,380 @@ Object.is 函数的作用是判断对象是否相等，示例代码如下：
 
 ## 8、函数扩展
 
+### 8.1、参数默认值
+
+示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        // ==================== 参数默认值 ==================== START
+        function ajax(url, method = "get", async = true) {
+            console.log(url, method, async)
+        }
+        ajax("/aaa", "get", true)
+        ajax("/bbb", "post")
+        ajax("ccc")
+        // ==================== 参数默认值 ==================== END
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230830221527346](ES6-ES13.assets/image-20230830221527346.png)
+
+### 8.2、rest 参数
+
+示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        // ==================== rest 参数 ==================== START
+        function test(x, y, ...data) {
+            console.log(x, y, data)
+        }
+
+        test(1, 2, 3, 4, 5, 6)
+        // ==================== rest 参数 ==================== END
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230830221834377](ES6-ES13.assets/image-20230830221834377.png)
+
+### 8.3、name 属性
+
+用于获取函数的方法名，示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        // ==================== name 属性 ==================== START
+        function test(a, b) {
+            console.log(a, b)
+        }
+        console.log(test.name)
+        // ==================== name 属性 ==================== END
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230830222125272](ES6-ES13.assets/image-20230830222125272.png)
+
+### 8.4、箭头函数
+
+示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <label>关键字1:</label>
+    <input type="text" id = "search"><br>
+    <label>关键字2:</label>
+    <input type="text" id = "search1"><br>
+    <label>关键字3:</label>
+    <input type="text" id = "search2"><br>
+    <script>
+        // ==================== 箭头函数-简单写法 ==================== START
+        let test = () => "Hello World"
+        console.log(test())
+        // ==================== 箭头函数-简单写法 ==================== END
+
+        // ==================== 箭头函数-返回对象 ==================== START
+        let test1 = () => ({
+            name: "ZGY",
+            age: 26
+        })
+        console.log(test1())
+        // ==================== 箭头函数-返回对象 ==================== END
+
+        // ==================== 箭头函数-只有一个参数 ==================== START
+        let arr = ["AAA", "BBB", "CCC"]
+        arr.map(item => console.log(item))
+        // ==================== 箭头函数-只有一个参数 ==================== END
+
+        // ==================== 箭头函数-多个参数 ==================== START
+         arr.map((item, index) => console.log(item, index))
+        // ==================== 箭头函数-多个参数 ==================== END
+
+        // ==================== 箭头函数-this ==================== START
+        // ==================== 原生函数的 this ==================== START
+         let search = document.querySelector("#search")
+         let search1 = document.querySelector("#search1")
+         search.oninput = function () {
+            console.log(this.value)
+         }
+
+         search1.oninput = function () {
+            let _this = this
+            setTimeout(function () {
+                console.log(_this.value)
+            }) 
+         }
+        // ==================== 原生函数的 this ==================== END
+
+        // ==================== 箭头函数的 this ==================== START
+         search2.oninput = function () {
+            setTimeout(() => console.log(this.value)) 
+         }
+        // ==================== 箭头函数的 this ==================== END
+        // ==================== 箭头函数-this ==================== END
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230830224944404](ES6-ES13.assets/image-20230830224944404.png)
+
+<b style="color:red;">Tips</b>：
+
+- 箭头函数无法访问 arguments，也不能使用 new 关键字。
+- 箭头函数的 this 指向的父作用域，原生函数的 this 执行的是调用者。
+
 ## 9、Symbol
 
+ES6 引入了一种新的原始数据类型，表示独一无二的值。它属于 JavaScript 语言的原生数据类型之一。
+
+JavaScript 的原生数据类型有如下几种：
+
+1. undefined。
+2. null。
+3. 布尔值（Boolean）。
+4. 字符串（String）。
+5. 数值（Number）。
+6. 对象（Object）。
+7. Symbol。
+
+示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        /* 
+            Symbol 用法
+        */
+
+        // ==================== 多个 Symbol 类型不相等 ==================== START
+        let s1 = Symbol()
+        let s2 = Symbol()
+        console.log(s1 === s2)
+        // ==================== 多个 Symbol 类型不相等 ==================== END
+
+        // ==================== Symbol 不能进行运算 ==================== START
+        // console.log(s1 > "1111") // 改行代码会报错
+        // ==================== Symbol 不能进行运算 ==================== END
+
+        // ==================== Symbol toString() ==================== START
+        console.log(s1.toString())
+        // ==================== Symbol toString() ==================== END
+
+        // ==================== Symbol 隐式转换为 Boolean ==================== START
+        if (s2) {
+            console.log("Hello World")
+        }
+        // ==================== Symbol 隐式转换为 Boolean ==================== END
+
+        // ==================== Symbol 实际应用-给对象扩展属性 ==================== START
+        let obj = {
+            name: "ZGY",
+            age: 26
+        }
+        let name = Symbol()
+        obj[name] = "LHM"
+        console.log(obj)
+        console.log(obj[name])
+
+        let key1 = Symbol()
+        let key2 = Symbol()
+        let obj1 = {
+            [key1]: "ZGY",
+            [key2]: 26
+        }
+        console.log(obj1)
+        // ==================== Symbol 实际应用-给对象扩展属性 ==================== END
+
+        // ==================== Symbol 实际应用-给对象扩展属性并添加别名 ==================== START
+        let key3 = Symbol("name")
+        let key4 = Symbol("age")
+        let obj2 = {
+            [key3]: "ZGY",
+            [key4]: 26
+        }
+        console.log(obj2)
+        // ==================== Symbol 实际应用-给对象扩展属性并添加别名 ==================== END
+
+        // ==================== 包含 Symbol 属性的对象遍历  ==================== START
+        Reflect.ownKeys(obj2).forEach(item => console.log(item, obj2[item]))
+        // ==================== 包含 Symbol 属性的对象遍历  ==================== END
+
+        // ==================== 使用 Symbol 来优化常量判断  ==================== START
+        const VIDEO = Symbol();
+        const AUDIO = Symbol();
+        const IMAGE = Symbol();
+
+        function play(type) {
+            switch (type) {
+                case VIDEO:
+                    console.log("视频播放")
+                    break
+                case AUDIO:
+                    console.log("音频播放")
+                    break
+                case IMAGE:
+                    console.log("图片播放")
+                    break
+                default:
+                    console.log("未知格式")
+                    break
+            }
+        }
+
+        play(1)
+        play(VIDEO)
+        // ==================== 使用 Symbol 来优化常量判断  ==================== END
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230830232526274](ES6-ES13.assets/image-20230830232526274.png)
+
+<b style="color:red;">Tips</b>：
+
+- Symbol 不能进行运算。
+- 包含 Symbol 属性的对象无法使用 `for in` 语法。
+
 ## 10、Iterator
+
+Iterator 的作用有三个，分别如下：
+
+1. 为各种数据结构提供一个统一的简便访问接口。
+2. 使得数据结构的成员能够按照某种次序排列。
+3. 能够使用 ES6 提供的 `for...of` 进行循环。
+
+原生 js 中默认具备 Iterator 接口的数据结构有如下这些：
+
+- Array。
+- Set。
+- Map。
+- String。
+- arguments 对象。
+- NodeList 对象。
+
+示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        /*
+            Iterator 使用案例
+        */
+
+        // ==================== 给具有线性属性的对象添加 Iterator 特性 ==================== START
+        let obj = {
+            0: "AAA",
+            1: "BBB",
+            2: "CCC",
+            length: 3,
+            [Symbol.iterator]: Array.prototype[Symbol.iterator]
+        }
+        for (item of obj) {
+            console.log(item)
+        }
+        // ==================== 给具有线性属性的对象添加 Iterator 特性 ==================== END
+
+        // ==================== Iterator 实际应用 ==================== START
+        let obj1 = {
+            name: "ZGY",
+            age: 26,
+            list: ["111", "222", "333"],
+            [Symbol.iterator]() {
+                let index = 0
+                return {
+                    next: () => ({
+                        value: this.list[index++],
+                        done: index === this.list.length + 1 ? true : false
+                    })
+                }
+            }
+        }
+
+        for(item of obj1) {
+            console.log(item)
+        }
+        // ==================== Iterator 实际应用 ==================== END
+
+        // ==================== 存在 Symbol(Symbol.iterator) 属性的对象可以使用 ... 进行解构赋值 ==================== START
+        let [...arr] = obj1
+        console.log(arr)
+        // ==================== 存在 Symbol(Symbol.iterator) 属性的对象可以使用 ... 进行解构赋值 ==================== END
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230831000342975](ES6-ES13.assets/image-20230831000342975.png)
+
+<b style="color:red;">Tips</b>：
+
+- 判断一个对象是否能使用 for...of 进行循环的依据是查看对象的 prototype 属性下是否有 Symbol(Symbol.iterator) 属性。
+- 代码中使用 Symbol.iterator 就是表示 Symbol(Symbol.iterator)。
 
 ## 11、Set 数据结构
 
