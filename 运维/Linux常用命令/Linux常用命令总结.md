@@ -887,6 +887,26 @@ curl -fsSL url 链接：获取 url 链接的内容。
 
 - cat /etc/issue，这种方法通用。
 
+# 查看 Linux 有几核
+
+查看物理 CPU 个数，命令如下：
+
+```bash
+cat /proc/cpuinfo |grep "physical id"|sort |uniq|wc -l
+```
+
+查看逻辑 CPU 个数，命令如下：
+
+```bash
+cat /proc/cpuinfo |grep "processor"|wc -l
+```
+
+查看单个 CPU 是几核，命令如下：
+
+```bash
+cat /proc/cpuinfo |grep "cores"|uniq
+```
+
 # Ubuntu 环境变量设置方法
 
 ## 1、对所有用户生效，永久的
