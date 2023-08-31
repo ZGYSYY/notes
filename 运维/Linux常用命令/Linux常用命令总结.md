@@ -340,6 +340,22 @@ systemd-journald 默认是把日志保存到内存中（在 /run/log/journal/ �
 
 [wget命令详解](https://www.cnblogs.com/peida/archive/2013/03/18/2965369.html)
 
+# SCP 命令
+
+将数据由本机上传到远程服务器，命令如下：
+
+```bash
+scp /etc/test.txt zgy@192.168.1.88:/home/
+```
+
+将数据由远程主机下载到本机上，命令如下：
+
+```bash
+scp zgy@192.168.11.88:/etc/test.txt .
+```
+
+<b><font color="red">Tips</font></b>：在传输目录时，要加上 `-r` 参数。
+
 # SELinux
 
 查看SELinux状态
