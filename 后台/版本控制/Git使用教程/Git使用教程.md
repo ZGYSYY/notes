@@ -548,6 +548,44 @@ git remote add origin 远程git仓库地址
 git push -u origin 分支名
 ```
 
+# git fetch 和 git pull 区别
+
+git fetch 是将远程主机的最新内容拉到本地，用户在检查了以后决定是否合并到工作本机分支中。
+
+git pull 是将远程主机的最新内容拉下来后直接合并，即：git pull = git fetch + git merge，这样可能会产生冲突，需要手动解决。
+
+# git merge 和 git rebase 区别
+
+## 1、git merge
+
+示例命令如下：
+
+```bash
+git checkout main
+git merge dev
+```
+
+结果如下：
+
+![image-20230831115629885](Git%E4%BD%BF%E7%94%A8%E6%95%99%E7%A8%8B.assets/image-20230831115629885.png)
+
+会在 master 分支上将 dev 提交的内容合并，然后新建一个提交记录。
+
+## 2、git rebase
+
+示例代码如下：
+
+```bash
+git checkout main
+git rebase dev
+```
+
+结果如下：
+
+![image-20230831120149066](Git%E4%BD%BF%E7%94%A8%E6%95%99%E7%A8%8B.assets/image-20230831120149066.png)
+
+会将 master 分支上的数据，在 dev 分支上进行重放。
+
 # Git 多平台换行符问题
 
 ```bash
@@ -606,3 +644,7 @@ Host github.com
 User git
 ProxyCommand connect -H 127.0.0.1:1080 %h %p
 ```
+
+# Git 推荐网站
+
+- [Learn Git Branching](https://learngitbranching.js.org/)
