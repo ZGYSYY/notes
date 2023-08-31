@@ -1723,9 +1723,404 @@ Iterator 的作用有三个，分别如下：
 
 ## 11、Set 数据结构
 
+Set 数据结构内可以装多个元素，而且不会有重复的元素。
+
+基本使用示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        /*
+            Set 使用案例
+        */
+
+        // ==================== Set 基本使用 ==================== START
+        let s1 = new Set([1, 2, 3, 2, 3, 4])
+        console.log(s1)
+        console.log([...s1])
+        console.log(Array.from(s1))
+
+        let s2 = new Set()
+        s2.add(1)
+        s2.add(2)
+        s2.add(3)
+        s2.add(2)
+        s2.add(3)
+        s2.add(4)
+        console.log(s2)
+
+        // 使用 for of 遍历原始
+        for(item of s1) {
+            console.log(item)
+        }
+
+        // 查看 Set 内有多少个元素
+        console.log(`有${s2.size}个元素`)
+
+        // 判断某个元素在 Set 中是否存在
+        console.log(s2.has(3))
+
+        // 删除指定元素
+        s2.delete(4)
+        console.log(s2)
+
+        // 情况 Set 中所有元素
+        s2.clear()
+        console.log(s2)
+
+        // Set 的 keys 函数
+        console.log("==========> Set 的 keys 函数 START")
+        for(item of s1.keys()) {
+            console.log(item)
+        }
+        console.log("==========> Set 的 keys 函数 END")
+
+        // Set 的 values 函数
+        console.log("==========> Set 的 values 函数 START")
+        for(item of s1.values()) {
+            console.log(item)
+        }
+        console.log("==========> Set 的 values 函数 END")
+
+        // Set 的 entries 函数
+        console.log("==========> Set 的 entries 函数 START")
+        for(item of s1.entries()) {
+            console.log(item)
+        }
+        console.log("==========> Set 的 entries 函数 END")
+
+
+        // ==================== Set 基本使用 ==================== END
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230831222722225](ES6-ES13.assets/image-20230831222722225.png)
+
 ## 12、Map 数据结构
 
+Map 是键值对的集合，但是“键”的范围不限于字符串，键名不允许重复。
+
+### 12.1、基本用法一
+
+示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        /*
+            Map 使用案例
+        */
+
+        // 创建 Map 对象，并初始化值
+        console.log("==========> 创建 Map 对象，并初始化值 START")
+        let m1 = new Map([
+            ["name", "ZGY"],
+            ["age", 26],
+            [{a: 1}, {b:1}]
+        ])
+        console.log(m1)
+        console.log("==========> 创建 Map 对象，并初始化值 END")
+
+        // 创建 Map 对象，然后再设置值
+        console.log("==========> 创建 Map 对象，然后再设置值 START")
+        let m2 = new Map()
+        m2.set("name", "ZGY")
+        m2.set("age", 26)
+        m2.set({a: 1}, {b: 1})
+        console.log(m2)
+        console.log("==========> 创建 Map 对象，然后再设置值 END")
+
+        // 使用 for of 遍历 Map
+        console.log("==========> 使用 for of 遍历 Map START")
+        for(item of m1) {
+            console.log(item)
+        }
+        console.log("==========> 使用 for of 遍历 Map END")
+
+        // 用数组解构将 Map 转为数组
+        console.log("==========> 用数组解构将 Map 转为数组 START")
+        console.log([...m1])
+        console.log("==========> 用数组解构将 Map 转为数组 END")
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230831224059191](ES6-ES13.assets/image-20230831224059191.png)
+
+### 12.2、基本用法二
+
+示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        /*
+            Map 的 set、get、has、delete、size、clear 方法使用案例
+        */
+
+        let obj = {
+            name: "ZGY",
+            age: 26
+        }
+        let m = new Map([
+            ["key1", "value1"],
+            ["key2", 1],
+            [obj, {a: 1, b: 2}]
+        ])
+        m.set("key3", "value3")
+        console.log(m.get("key1"))
+        console.log(m.get("key2"))
+        console.log(m.get(obj))
+        console.log(m.get("key3"))
+        console.log(m.has("key2"))
+        console.log(m.delete(obj))
+        console.log(m.size)
+        m.clear()
+        console.log(m)
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230831224818892](ES6-ES13.assets/image-20230831224818892.png)
+
+### 12.3、基本用法三
+
+示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        /*
+            Map 的遍历
+        */
+
+        let obj = {
+            name: "ZGY",
+            age: 26
+        }
+        let m = new Map([
+            ["key1", "value1"],
+            ["key2", 1],
+            [obj, {a: 1, b: 2}]
+        ])
+
+        console.log("==========> keys 遍历 START")
+        for(item of m.keys()) {
+            console.log(item)
+        }
+        console.log("==========> keys 遍历 END")
+
+        console.log("==========> values 遍历 START")
+        for(item of m.values()) {
+            console.log(item)
+        }
+        console.log("==========> values 遍历 END")
+
+        console.log("==========> entries 遍历 START")
+        for(item of m.entries()) {
+            console.log(item)
+        }
+        console.log("==========> entries 遍历 END")
+
+        console.log("==========> forEach 遍历 START")
+        m.forEach((value, key) => {
+            console.log(value, key)
+        })
+        console.log("==========> forEach 遍历 END")
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230831225820956](ES6-ES13.assets/image-20230831225820956.png)
+
 ## 13、Proxy
+
+Proxy 的作用是在对象和对象的属性之间设置一个代理，获取该对象的值或者设置改对象的值，以及实例化这些操作，都会被拦截住，因此我们可以在拦截的地方做一些增强操作。
+
+在 ES6 以前，拦截对象属性更改，示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div id="box"></div>
+    <script>
+        /*
+            拦截对象属性更改
+        */
+
+        
+        let box = document.querySelector("#box")
+        let obj = {}
+        Object.defineProperty(obj, "data", {
+            get() {
+                console.log("==========> 调用了 get 方法")
+                return "ok"
+            },
+            set(value) {
+                console.log("==========> 调用了 set 方法")
+                box.innerHTML = value
+            }
+        })
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230831232131297](ES6-ES13.assets/image-20230831232131297.png)
+
+这种方式有以下局限性：
+
+1. 只能针对一个属性进行拦截，如果是复杂对象，写着就比较麻烦。
+2. 只能对对象进行拦截，像数组这种就不支持。
+
+使用 Proxy 实现拦截对象属性更改，示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div id="box"></div>
+    <script>
+        /*
+            使用 Proxy 对对象属性进行拦截（监听）
+        */
+
+        let box = document.querySelector("#box")
+        let obj = {}
+        let proxy = new Proxy(obj, {
+            get(target, key) {
+                return target[key]
+            },
+            set(target, key, value) {
+                if (key === "data") {
+                    box.innerHTML = value
+                }
+                target[key] = value
+            },
+            has() {
+                return false
+            }
+        })
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230831233845025](ES6-ES13.assets/image-20230831233845025.png)
+
+使用 Proxy 实现 Set、Map 属性的拦截，示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        /*
+            Proxy 实现 Set、Map 属性的拦截
+        */
+
+        // Set 拦截
+        let s = new Set()
+        let proxy = new Proxy(s, {
+            get(target, key) {
+                // 如果是自带方法，就返回自己
+                let value = target[key]
+                if (value instanceof Function) {
+                    return value.bind(target)
+                }
+                return value
+             },
+            set() {
+                console.log("set")
+            }
+        })
+
+        // Map 拦截
+        let m = new Map()
+        let proxy1 = new Proxy(m, {
+            get(target, key) {
+                // 如果是自带方法，就返回自己
+                let value = target[key]
+                if (value instanceof Function) {
+                    return value.bind(target)
+                }
+                return value
+             },
+            set() {
+                console.log("set")
+            }
+        })
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230831235448207](ES6-ES13.assets/image-20230831235448207.png)
+
+Proxy 本质属于元编程非破坏性数据劫持，在原对象的基础上进行了功能的衍生而又不影响原对象，符合高内聚低耦合的设计理念。
 
 ## 14、Reflect
 
