@@ -2062,7 +2062,7 @@ Proxy 的作用是在对象和对象的属性之间设置一个代理，获取�
 
 结果如下：
 
-![image-20230831233845025](ES6-ES13.assets/image-20230831233845025.png)
+<img src="ES6-ES13.assets/image-20230831233845025.png" alt="image-20230831233845025"  />
 
 使用 Proxy 实现 Set、Map 属性的拦截，示例代码如下：
 
@@ -2123,6 +2123,255 @@ Proxy 的作用是在对象和对象的属性之间设置一个代理，获取�
 Proxy 本质属于元编程非破坏性数据劫持，在原对象的基础上进行了功能的衍生而又不影响原对象，符合高内聚低耦合的设计理念。
 
 ## 14、Reflect
+
+Reflect 可以用于获取目标对象的行为，它与 Object 类似，但是更易读，能给所操作的对象提供了一种更优雅的方式。它的方法与 Proxy 是对应的。
+
+### 14.1、代替 Object
+
+目前的趋势，Reflect 正在逐步替代 Object，所以 Object 大多数方法和属性，都能使用 Reflect 来替代。示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        // ==================== 使用 Object 定义对象属性 ==================== START
+        let obj = {}
+        Object.defineProperty(obj, "name", {
+            value: "ZGY", // 设置默认值
+            writable: false, // 不可再赋值
+            enumerable: false // 不允许删除
+        })
+        // ==================== 使用 Object 定义对象属性 ==================== END
+
+        // ==================== 使用 Reflect 定义对象属性 ==================== START
+        let obj1 = {}
+        Reflect.defineProperty(obj1, "name", {
+            value: "ZGY", // 设置默认值
+            writable: false, // 不可再赋值
+            enumerable: false // 不允许删除
+        })
+        // ==================== 使用 Reflect 定义对象属性 ==================== END
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230912230955987](ES6-ES13.assets/image-20230912230955987.png)
+
+<b style="color:red;">Tips</b>：Object 和 Reflect 还是有区别的，空余时间可以查资料了解一下。
+
+### 14.2、优化方法返回异常
+
+在使用 Project 的一些方法，比如 definProperty 方法时，如果出错会出现异常信息，使用 Reflect 后，将不会出现异常信息，而是返回一个 false。使用 Object 示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        // ==================== 使用 Object 出现异常 ==================== START
+        let obj = {}
+
+        Object.defineProperty(obj, "name", {
+            value: "ZGY",
+            writable: false,
+            enumerable: false
+        })
+
+        Object.defineProperty(obj, "name", {
+            value: "LHM",
+            writable: false,
+            enumerable: false
+        })
+        // ==================== 使用 Object 出现异常 ==================== END
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230912232235944](ES6-ES13.assets/image-20230912232235944.png)
+
+使用 Reflect 示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        // ==================== 使用 Reflect 不出现异常 ==================== START
+        let obj = {}
+
+        Reflect.defineProperty(obj, "name", {
+            value: "ZGY",
+            writable: false,
+            enumerable: false
+        })
+
+        let res = Reflect.defineProperty(obj, "name", {
+            value: "LHM",
+            writable: false,
+            enumerable: false
+        })
+        console.log("==========> res:", res)
+        // ==================== 使用 Reflect 不出现异常 ==================== END
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230912232314225](ES6-ES13.assets/image-20230912232314225.png)
+
+### 14.3、将命令式语法改为函数式写法
+
+示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        // ==================== 命令式写法 ==================== START
+        let obj = {
+            name: "ZGY",
+            age: 27
+        }
+
+        console.log(obj)
+        console.log("name" in obj)
+        delete obj.name
+        console.log(obj)
+        // ==================== 命令式写法 ==================== END
+
+        console.log("==================== 分割线 ====================")
+
+        // ==================== 函数式写法 ==================== START
+        let obj1 = {
+            name: "ZGY",
+            age: 27
+        }
+
+        console.log(obj1)
+        console.log(Reflect.has(obj1, "name"))
+        Reflect.deleteProperty(obj1, "name")
+        console.log(obj)
+        // ==================== 函数式写法 ==================== END
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230912233400525](ES6-ES13.assets/image-20230912233400525.png)
+
+### 14.4、结合 Proxy 对 Set 进行属性拦截
+
+示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        let s = new Set()
+        let proxy = new Proxy(s, {
+            get(target, key) {
+                let value = Reflect.get(target, key)
+                if (value instanceof Function) {
+                    return value.bind(target)
+                }
+                return value
+            },
+            set(target, key, value) {
+                Reflect.set(...arguments)
+            }
+        })
+
+        proxy.add(1)
+        console.log("==========> s:", s)
+        proxy.delete(1)
+        console.log("==========> s:", s)
+        proxy.name = "ZGY"
+        console.log("==========> proxy:", proxy)
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230913000739277](ES6-ES13.assets/image-20230913000739277.png)
+
+### 14.5、结合 Proxy 对数组进行属性拦截
+
+示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        let arr = [1, 2, 3, 4]
+        let proxy = new Proxy(arr, {
+            get(target, key) {
+                console.log(`==========> get 方法，值为:${key}`)
+                return Reflect.get(...arguments)
+            },
+            set(target, key, value) {
+                console.log(`==========> set 方法，key:${key}, value:${value}`)
+                return Reflect.set(...arguments)
+            }
+        })
+
+        proxy.push(4)
+        console.log(`==========> arr:${arr}`)
+        let value = proxy.pop(2)
+        console.log(`==========> value:${value}`)
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230913002109493](ES6-ES13.assets/image-20230913002109493.png)
 
 ## 15、Promise 对象
 
