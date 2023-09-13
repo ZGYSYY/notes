@@ -2375,6 +2375,340 @@ Reflect 可以用于获取目标对象的行为，它与 Object 类似，但是�
 
 ## 15、Promise 对象
 
+Promise 是异步编程的一种解决方案，比传统的解决方案-“回调方法”更加合理和强大。ES6 将其写进了语言标准，同一了用法，因此原生 JS 就提供了 Promise 对象。
+
+### 15.1、传统回调方法实现异步编程
+
+传统的使用回调方法实现异步编程，会造成回调地狱，示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        // ==================== 使用传统方法-回调方法，实现异步编程 ==================== START
+        function ajax(url, successcb, failcb) {
+            // 模拟异步请求
+            setTimeout(() => {
+                successcb(Math.random())
+                console.log("==========> 模拟异步请求，并成功请求到数据！");
+            }, 3000)
+        }
+
+        // 回调地狱式的发送异步请求
+        ajax("/a", (data) => {
+            console.log(`==========> data: ${data}`);
+            ajax("/b", (data1) => {
+                console.log(`==========> data1: ${data1}`)
+            }, () => {
+                console.log("==========> 请求失败！");
+            })
+        }, () => {
+            console.log("==========> 请求失败！");
+        })
+        // ==================== 使用传统方法-回调方法，实现异步编程 ==================== END
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230913224932526](ES6-ES13.assets/image-20230913224932526.png)
+
+### 15.2、Promise 基本使用
+
+Promise 基本使用，示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        /**
+         * 描述：Promise 的基本使用
+         */
+        
+         let p = new Promise(function(resolve, reject){
+            // 模拟异步方法-成功
+            setTimeout(function(){
+                resolve(Math.random())
+                console.log("==========> 异步方法-成功")
+            }, 3000)
+         })
+
+         let p1 = new Promise(function(resolve, reject){
+            // 模拟异步方法-失败
+            setTimeout(function(){
+                reject(Math.random())
+                console.log("==========> 异步方法-失败")
+            }, 3000)
+         })
+
+         // 使用 Promise 执行异步方法
+         p.then(data => {
+            console.log(`==========> 异步方法执行成功，data: ${data}`)
+         }).catch(err => {
+            console.log(`==========> 异步方法执行失败，err: ${err}`)
+         })
+
+         p1.then(data => {
+            console.log(`==========> 异步方法执行成功，data: ${data}`)
+         }).catch(err => {
+            console.log(`==========> 异步方法执行失败，err: ${err}`)
+         })
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230913231453204](ES6-ES13.assets/image-20230913231453204.png)
+
+### 15.3、Promise 对象的状态
+
+Promise 对象通过自身的状态，来控制异步操作。有如下 3 种状态：
+
+1. 异步操作未完成（pending）。
+2. 异步操作成功（fulfilled）。
+3. 异步操作失败（rejected）。
+
+三种状态的变化途径有如下 2 种：
+
+1. 从”未完成“到”成功“。
+2. 从”未完成“到”失败“。
+
+一旦状态发生变化，将不会再有新的状态变化。这也是 Promise 这个名字的由来，它的英语意思是”承诺“，一旦承诺生效，就不得再该表。这也意味着，Promise 实例的状态变化只能发生一次。因此，Promise 的最终结果只有如下两种：
+
+1. 异步操作成功，Promise 实例传回一个值（value），状态变为 fulfilled。
+2. 异步操作失败，Promise 实例抛出一个错误（error），状态变为 rejected。
+
+### 15.4、使用 Promise 实现 Ajax 异步调用
+
+示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        /**
+         * 描述：使用 Promise 实现 Ajax 异步调用
+         */
+
+         function ajax(url){
+            return new Promise((resolve, reject) => {
+                let xhr = new XMLHttpRequest()
+                xhr.open("get", url, true)
+                xhr.send()
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState === 4) {
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            resolve(JSON.parse(xhr.responseText))
+                        } else {
+                            reject(xhr.responseText)
+                        }
+                    }
+                }
+            })
+         }
+
+         // 调用 ajax 请求-成功
+         ajax("1.json")
+         .then(data => console.log(`==========> 获取数据成功，data：${JSON.stringify(data)}`))
+         .catch(err => console.log("==========> 获取数据失败，错误信息如下：", err))
+
+         // 调用 ajax 请求-失败
+         ajax("2.json")
+         .then(data => console.log(`==========> 获取数据成功，data：${JSON.stringify(data)}`))
+         .catch(err => console.log("==========> 获取数据失败，错误信息如下：", err))
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230913235251775](ES6-ES13.assets/image-20230913235251775.png)
+
+### 15.5、使用 Promise 解决回调地狱
+
+Promise 的 then 方法，如果 return 非 Promise 类型，状态转换是，pending 到 fulfilled。如果return Promise 类型，将根据这个新的 Promise 对象的结果来决定状态是，pending 到 fulfilled 或者 pending 到 rejected。
+
+示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        /**
+         * 描述：使用 Promise 解决回调地狱
+         */
+        
+        function ajax(url){
+            return new Promise((resolve, reject) => {
+                let xhr = new XMLHttpRequest()
+                xhr.open("get", url, true)
+                xhr.send()
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState === 4) {
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            resolve(JSON.parse(xhr.responseText))
+                        } else {
+                            reject(xhr.responseText)
+                        }
+                    }
+                }
+            })
+        }
+
+        ajax("1.json").then(data => {
+            console.log(data)
+            return ajax("2.json")
+        }).then(data => {
+            console.log(dtaa)
+        }).catch(err => console.log(err))
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230914000339346](ES6-ES13.assets/image-20230914000339346.png)
+
+### 15.6、Promise.all 方法
+
+Promise.all 方法能够实现所有异步方法执行完后，再执行后续操作。示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        /**
+         * 描述：Promise.all 方法使用
+         *
+         */
+
+        let pro = new Promise((resolve, reject) => {
+            setTimeout(() => {
+                console.log("==========> 执行异步请求1")
+                resolve(1)
+            }, 3000)
+        })
+
+        let pro1 = new Promise((resolve, reject) => {
+            setTimeout(() => {
+                console.log("==========> 执行异步请求2")
+                resolve(2)
+            }, 2000)
+        })
+
+        let pro2 = new Promise((resolve, reject) => {
+            setTimeout(() => {
+                console.log("==========> 执行异步请求3")
+                resolve(3)
+            }, 1000)
+        })
+
+        Promise.all([pro, pro1, pro2]).then(data => {
+            console.log(data)
+        }).catch(err => {
+            console.log(err)
+        })
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230914001639079](ES6-ES13.assets/image-20230914001639079.png)
+
+### 15.7、Promise.race 方法
+
+Promise.race 方法能够实现，哪个请求快就响应哪个，示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        /**
+         * 描述：Promise.race 方法使用
+         *
+         */
+
+        let pro = new Promise((resolve, reject) => {
+            setTimeout(() => {
+                console.log("==========> 执行异步请求1")
+                resolve(1)
+            }, 3000)
+        })
+
+        let pro1 = new Promise((resolve, reject) => {
+            setTimeout(() => {
+                console.log("==========> 执行异步请求2")
+                resolve(2)
+            }, 2000)
+        })
+
+        let pro2 = new Promise((resolve, reject) => {
+            setTimeout(() => {
+                console.log("==========> 执行异步请求3")
+                resolve(3)
+            }, 1000)
+        })
+
+        Promise.race([pro, pro1, pro2]).then(data => {
+            console.log(data)
+        }).catch(err => {
+            console.log(err)
+        })
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230914002136075](ES6-ES13.assets/image-20230914002136075.png)
+
+<b style="color:red;">Tips</b>：在声明 Promise 实例后，执行体的代码会执行，并不是要在调用 then 方法后才执行，需要明确 then 方法和 catch 方法，都是为了获取结果或错误。 
+
 ## 16、Generator 函数
 
 ## 17、Class 语法
