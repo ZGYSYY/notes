@@ -2711,6 +2711,225 @@ Promise.race 方法能够实现，哪个请求快就响应哪个，示例代码�
 
 ## 16、Generator 函数
 
+Generate 函数是 ES6 提供的一种异步编程解决方案。Generate 函数是一个状态机，封装了多个内部状态。执行 Generate 函数会放回一个遍历器对象，也就是说，Generate 函数除了状态机，还是一个遍历器对象生成函数。返回的遍历器对象，可以依次遍历 Generate 函数内部的每一个状态。
+
+### 16.1、Generate 简单用法
+
+Generate 简单用法，示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        function *gen() {
+            console.log(11)
+            yield
+            console.log(22)
+            yield
+            console.log(33)
+        }
+
+        let g = gen()
+        
+        g.next()
+        g.next()
+        g.next()
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230919214855603](ES6-ES13.assets/image-20230919214855603.png)
+
+<b style="color:red;">Tips</b>：
+
+- 如果不调用 next 方法，函数体中的代码并不会执行。
+- next 方法的作用就是让函数体中的代码执行到 yield 标记的位置，函数体最后的代码也需要执行 next 方法才会执行。
+
+### 16.2、Generate 产出值
+
+可以在 yield 关键字后面加上需要产生的值，示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        function *gen() {
+            yield "a"
+            yield "b"
+            yield "c"
+        }
+
+        let g = gen()
+
+        console.log(g.next())
+        console.log(g.next())
+        console.log(g.next())
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230919220040391](ES6-ES13.assets/image-20230919220040391.png)
+
+### 16.3、使用 for of 遍历
+
+Generate 函数，可以使用 for of 语法进行遍历，遍历的值为关键字 yield 后追加的值。示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        function *gen() {
+            yield "ZGY"
+            yield "LHM"
+            yield "ZYD"
+        }
+
+        let g = gen()
+
+        for (let i of g) {
+            console.log(i)
+        }
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230919220529955](ES6-ES13.assets/image-20230919220529955.png)
+
+### 16.4、next 传参
+
+示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        function *gen() {
+            let a = yield "ZGY"
+            console.log("gen 内部", a)
+
+            let b = yield "LHM"
+            console.log("gen 内部", b)
+        }
+
+        let g = gen()
+
+        let value = g.next("A") // [1]
+        console.log(value)
+        let value1 = g.next("B")
+        console.log(value1)
+        let value2 = g.next("C")
+        console.log(value2)
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230919223326437](ES6-ES13.assets/image-20230919223326437.png)
+
+<b style="color:red;">Tips</b>：这里有个怪异现象，示例代码中，标记 [1] 处，next 赋的值，在 gen 函数体内是无法获取的，因此是无意义的。
+
+### 16.5、结合 Ajax 案例
+
+示例代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        function ajax(url) {
+            return new Promise((resolve, reject) => {
+                let xhr = new XMLHttpRequest()
+                xhr.open("get", url, true)
+                xhr.send()
+                xhr.onreadystatechange = () => {
+                    if (xhr.readyState === 4) {
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            resolve(JSON.parse(xhr.responseText))
+                        } else {
+                            reject(xhr.responseText)
+                        }
+                    }
+                }
+            })
+        }
+
+        function *gen() {
+            let r = yield ajax("1.json")
+            console.log("第一个请求结果", r)
+            r = yield ajax("2.json")
+            console.log("第二个请求结果", r)
+        }
+
+        // 手动版本
+        // let g = gen()
+        // g.next().value.then(data => {
+        //     g.next(data).value.then(data1 => g.next(data1))
+        // })
+
+        // 自动版本
+        function autoRun(gen) {
+            let g = gen()
+
+            function next(data) {
+                let res = g.next(data)
+                if (res.done) return
+                res.value.then(v => {
+                    next(v)
+                })
+            }
+            next()
+        }
+        autoRun(gen)
+    </script>
+</body>
+</html>
+```
+
+结果如下：
+
+![image-20230919232226770](ES6-ES13.assets/image-20230919232226770.png)
+
 ## 17、Class 语法
 
 ## 18、Class 继承
