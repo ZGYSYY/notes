@@ -319,12 +319,12 @@ systemd-journald 默认是把日志保存到内存中（在 /run/log/journal/ �
 
 两者功能存在重复，因此可以停掉一个服务，看自己愿意使用那种日志记录方式。
 
-# curl命令
+# curl 命令
 
 - curl -o 【文件名】url：将指定的url资源下载到指定的文件中。
 - curl -L url：如果指定的url返回重定向，将跳转重定向地址，如果不加`L`将不回重定向。
 
-# ln命令
+# ln 命令
 
 - ln -s 【源文件】 【目标文件】：给源文件创建一个软连接到目标文件。
 
@@ -332,7 +332,7 @@ systemd-journald 默认是把日志保存到内存中（在 /run/log/journal/ �
 
 [linux 创建连接命令 ln -s 软链接](https://www.cnblogs.com/kex1n/p/5193826.html)
 
-# wget命令
+# wget 命令
 
 - wget -O 【文件名】 url：将指定的url资源下载到指定的文件中。
 
@@ -340,7 +340,7 @@ systemd-journald 默认是把日志保存到内存中（在 /run/log/journal/ �
 
 [wget命令详解](https://www.cnblogs.com/peida/archive/2013/03/18/2965369.html)
 
-# SCP 命令
+# scp 命令
 
 将数据由本机上传到远程服务器，命令如下：
 
@@ -355,6 +355,14 @@ scp zgy@192.168.11.88:/etc/test.txt .
 ```
 
 <b><font color="red">Tips</font></b>：在传输目录时，要加上 `-r` 参数。
+
+# sed 命令
+
+替换正则表达式匹配的内容，并生成备份文件，命令如下：
+
+```bash
+sed -i'.bak' 's,/[a-z]*.ubuntu.com,/mirrors.tuna.tsinghua.edu.cn,' /etc/apt/sources.list
+```
 
 # SELinux
 
