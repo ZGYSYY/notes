@@ -181,3 +181,15 @@ id唯一标识，可以随便写，如果该镜像仓库需要认证，该id需�
 </mirror>
 ```
 
+# 父子工程指定模块打包
+
+示例如下：
+
+```bash
+mvn clean package -Dmaven.test.skip=true -P prod -pl parent-modules/child-modules -am
+```
+
+参数解释：
+
+- `-pl`: 指定要构建的模块路径。
+- `-am`: 构建指定模块及其所有祖先模块。这意味着除了 `child-modules` 模块外，还会构建其所有父模块。
