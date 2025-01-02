@@ -648,3 +648,53 @@ ProxyCommand connect -H 127.0.0.1:1080 %h %p
 # Git 推荐网站
 
 - [Learn Git Branching](https://learngitbranching.js.org/)
+
+# Git 分支规范
+
+## 1、分支命名
+
+以下是一些广泛采用的Git分支命名和管理规范：
+
+- 主分支（Main）
+
+main 是主分支，包含生产环境的代码，应始终保持稳定和可部署状态。
+
+- 开发分支（Develop）
+
+develop 是次级主分支，用作开发的主要基线，所有特性分支都从此分支检出，并最终合并回来。
+
+- 特性分支（Feature）
+
+`feature/` 前缀用于新功能开发的分支。例如：`feature/add-user-authentication`，`feature/improve-ui-layout`。
+
+特性分支从 develop 分支检出，并在完成后合并回 develop。如果没有 develop 分支，则直接从 main 检出，并在完成后合并回 main。
+
+- 修复分支（Bugfix）
+
+`bugfix/` 前缀用于错误修复的分支。例如：`bugfix/login-fail`，`bugfix/memory-leak`。
+
+修复分支通常从 develop 分支检出，并在修复后合并回 develop。如果没有 develop 分支，则直接从 main 检出，并在完成后合并回 main。
+
+- 热修复分支（Hotfix）
+
+`hotfix/` 前缀用于生产环境中紧急问题的修复。例如：`hotfix/critical-security-patch`。
+
+热修复分支从 main 分支检出，并在修复后合并回 main。
+
+- 发布分支（Release）:
+
+`release/` 前缀用于即将发布的版本。例如：`release/v1.0.1`。
+
+发布分支从 develop 分支检出，用于最终的测试和微调，然后合并到 main 并打标签（tagging），最后也应合并回 develop。
+
+标签用于标记发布点，如版本发布。标签应该遵循语义化版本命名，例如：v1.2.0。
+
+## 2、分支使用
+
+- 主分支代码需要保证随时可以发布。
+- 原则上一个需求或者一个bug单独一个分支，不允许共用分支。
+- 针对测试环境不够用的场景，需要多个需求或者bug在同一台机器上复用的场景，需要新建一个测试分支，相关的需求和bug分支合并到测试分支，代码变更需要在原来的分支上修改，修改后在合并到测试分支，不允许直接在测试分支上修改代码。
+
+## 3、代码发布
+
+- 灰度和正式环境发布只允许使用主分支进行发布，主分支设置了提交保护，代码合并到主分支需要审核通过。
