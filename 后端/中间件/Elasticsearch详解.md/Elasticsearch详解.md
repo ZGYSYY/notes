@@ -10,7 +10,7 @@
 
 示例如下：
 
-```tex
+```json
 PUT /user_details
 {
   "settings": {
@@ -87,7 +87,7 @@ GET /user_details/_mapping
 
 1. 创建一个新索引，修正 mapping
 
-    ```tex
+    ```json
     PUT /products_v2
     {
       "mappings": {
@@ -102,7 +102,7 @@ GET /user_details/_mapping
 
 2. 将老索引数据复制到新索引
 
-    ```tex
+    ```json
     POST /_reindex
     {
       "source": { "index": "products" },
@@ -118,7 +118,7 @@ GET /user_details/_mapping
 
 4. 用别名让新索引接管
 
-    ```
+    ```json
     POST /_aliases
     {
       "actions": [
@@ -133,7 +133,7 @@ GET /user_details/_mapping
 
 普通新增，示例如下：
 
-```tex
+```json
 PUT /user_details/_doc/1
 {
   "user_id": 1,
@@ -144,7 +144,7 @@ PUT /user_details/_doc/1
 
 批量新增方式一，示例如下：
 
-```tex
+```json
 POST _bulk
 {"index": { "_index": "user_details", "_id": "3" }}
 {"user_id": 3,"user_name": "zyd","user_remark": "王老先生有块地！"}
@@ -154,7 +154,7 @@ POST _bulk
 
 批量新增方式二，示例如下：
 
-```tex
+```json
 POST /user_details/_bulk
 {"index": {"_id": "5" }}
 {"user_id": 5,"user_name": "zfy","user_remark": "买家具找我！！！"}
@@ -172,7 +172,7 @@ POST /user_details/_bulk
 
 结构如下：
 
-```tex
+```json
 GET /index/_search
 {
   "query": {
@@ -293,7 +293,7 @@ GET /user_details/_doc/1
 
 查看索引所有数据，示例如下：
 
-```
+```json
 GET /user_details/_search
 {
   "query": {
@@ -304,7 +304,7 @@ GET /user_details/_search
 
 关键字查询，示例如下：
 
-```tex
+```json
 GET /user_details/_search
 {
   "query": {
@@ -317,7 +317,7 @@ GET /user_details/_search
 
 查询并排序，示例如下：
 
-```tex
+```json
 GET /user_details/_search
 {
   "sort": [
@@ -337,7 +337,7 @@ GET /user_details/_search
 
 查询结果高亮，示例如下：
 
-```tex
+```json
 GET /user_details/_search
 {
   "query": {
